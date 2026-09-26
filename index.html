@@ -677,11 +677,14 @@
   ].join(','));
   const foldObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      entry.target.classList.add('fold-in');
-      foldObserver.unobserve(entry.target);
+      if (entry.intersectionRatio >= 0.18) {
+        entry.target.classList.add('fold-in');
+      } else if (!entry.isIntersecting) {
+        // 标题完全离开屏幕后复位，再次上滑或下滑进入时会重新展开
+        entry.target.classList.remove('fold-in');
+      }
     });
-  }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+  }, { threshold: [0, 0.18], rootMargin: '0px 0px -6% 0px' });
 
   foldTargets.forEach(target => {
     if (target.dataset.foldReady) return;
