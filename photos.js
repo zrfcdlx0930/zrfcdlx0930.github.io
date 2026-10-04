@@ -1,5 +1,5 @@
 window.ALBUM_SECTIONS=[
-{title:"山野 · 雪山与经幡",photos:[
+{title:"山野",photos:[
 {t:"assets/album/t_100_1782145160627.jpg",f:"assets/album/f_100_1782145160627.jpg"},
 {t:"assets/album/t_097_1782135273606.jpg",f:"assets/album/f_097_1782135273606.jpg"},
 {t:"assets/album/t_077_1781882210900.jpg",f:"assets/album/f_077_1781882210900.jpg"},
@@ -34,7 +34,7 @@ window.ALBUM_SECTIONS=[
 {t:"assets/album/t_106_1782309972078.jpg",f:"assets/album/f_106_1782309972078.jpg"},
 {t:"assets/album/t_107_1782309975413.jpg",f:"assets/album/f_107_1782309975413.jpg"}
 ]},
-{title:"湖光 · 洱海之间",photos:[
+{title:"湖光",photos:[
 {t:"assets/album/t_068_1781787489949.jpg",f:"assets/album/f_068_1781787489949.jpg"},
 {t:"assets/album/t_066_1781787468808.jpg",f:"assets/album/f_066_1781787468808.jpg"},
 {t:"assets/album/t_039_1781587644693.jpg",f:"assets/album/f_039_1781587644693.jpg"},
@@ -72,7 +72,7 @@ window.ALBUM_SECTIONS=[
 {t:"assets/album/t_073_1781849016930.jpg",f:"assets/album/f_073_1781849016930.jpg"},
 {t:"assets/album/t_074_1781849035720.jpg",f:"assets/album/f_074_1781849035720.jpg"}
 ]},
-{title:"日常 · 那些记录",photos:[
+{title:"日常",photos:[
 {t:"assets/album/t_000_1689834179369.jpg",f:"assets/album/f_000_1689834179369.jpg"},
 {t:"assets/album/t_001_1690538120289.jpg",f:"assets/album/f_001_1690538120289.jpg"},
 {t:"assets/album/t_002_1695482725253.jpg",f:"assets/album/f_002_1695482725253.jpg"},
