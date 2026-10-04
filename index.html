@@ -169,8 +169,15 @@
   .s-item:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 32px 64px -24px rgba(0,0,0,.8); }
   .s-item img { height: 100%; width: auto; display: block; }
   .work-video { flex: 0 0 auto; height: min(360px, 52vw); max-width: min(720px, 82vw); border-radius: 18px; border: 1px solid var(--line); background: #000; scroll-snap-align: center; }
-  .portrait-item { background: linear-gradient(135deg, rgba(255,255,255,.055), rgba(216,185,138,.025)); }
-  .portrait-item img { width: 100%; height: 100%; object-fit: cover; }
+  /* 个人形象：独立的手风琴画廊，不影响作品相册的横向滚动。 */
+  .portrait-accordion { display: flex; gap: 10px; height: clamp(320px, 39vw, 460px); perspective: 1400px; }
+  .portrait-panel { position: relative; display: block; flex: 1 1 0; min-width: 0; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: #101114; box-shadow: 0 18px 40px -18px rgba(0,0,0,.6); cursor: pointer; transform: rotateY(-3deg); transition: flex-grow .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1), box-shadow .6s, border-color .6s; }
+  .portrait-panel img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); filter: grayscale(.38) brightness(.66); transition: transform .6s cubic-bezier(.22,1,.36,1), filter .6s; }
+  .portrait-panel::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.18)); opacity: 1; transition: opacity .6s; }
+  .portrait-panel.is-active { flex-grow: var(--portrait-open-grow, 6.5); transform: rotateY(0); border-color: rgba(255,255,255,.32); box-shadow: 0 28px 60px -24px rgba(0,0,0,.78); cursor: zoom-in; }
+  .portrait-panel.is-active img { transform: scale(1); filter: none; }
+  .portrait-panel.is-active::after { opacity: 0; }
+  .portrait-panel:focus-visible { outline: 2px solid #d8b98a; outline-offset: 3px; }
 
   /* 联系 */
   .contact { text-align: center; padding: 140px 0 110px; }
@@ -204,6 +211,8 @@
     .hero { padding-top: 100px; }
   }
   @media (max-width: 480px) {
+    .portrait-accordion { flex-direction: column; height: min(76vh, 680px); min-height: 480px; gap: 8px; }
+    .portrait-panel { min-height: 0; transform: none; }
     .wrap { padding: 0 18px; }
     .hero h1 { font-size: clamp(44px, 19vw, 64px); letter-spacing: 0; }
     .hero .sub { font-size: 17px; }
@@ -227,6 +236,8 @@
     .hero { min-height: auto; padding-top: 80px; }
   }
   @media (prefers-reduced-motion: reduce) {
+    .portrait-panel, .portrait-panel img, .portrait-panel::after { transition: none; }
+    .portrait-panel, .portrait-panel img { transform: none; }
     .gradient-waves-bg canvas { display: none; }
     .fold-text-piece { transform: none !important; opacity: 1 !important; animation: none !important; }
     .fold-text-piece::after { display: none; }
@@ -261,15 +272,14 @@
       <div class="hero-tags blur-reveal">摄影 / 剪辑 / 调色 · 吉他 / 贝斯</div>
     </div>
     <h3 class="strip-title reveal">个人形象 · 这是我</h3>
-    <div class="strip reveal">
-      <div class="s-item portrait-item" style="aspect-ratio:1400/1867"><img src="assets/me-8.jpg" alt="" width="1400" height="1867" loading="eager" fetchpriority="high" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:1400/1867"><img src="assets/me-2.jpg" alt="" width="1400" height="1867" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:1400/787"><img src="assets/me-3.jpg" alt="" width="1400" height="787" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:4/3"><img src="assets/me-4.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:4/3"><img src="assets/me-5.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:4/3"><img src="assets/me-6.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:4/3"><img src="assets/me-7-v2.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></div>
-      <div class="s-item portrait-item" style="aspect-ratio:1400/1366"><img src="assets/me-1-v2.jpg" alt="" width="1400" height="1366" loading="lazy" decoding="async"></div>
+    <div class="portrait-accordion reveal" id="portraitAccordion" aria-label="个人形象照片画廊">
+      <button class="portrait-panel is-active" type="button" aria-label="查看个人照片 1，共 7 张" aria-pressed="true"><img src="assets/me-8.jpg" alt="" width="1400" height="1867" loading="eager" fetchpriority="high" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 2，共 7 张" aria-pressed="false"><img src="assets/me-2.jpg" alt="" width="1400" height="1867" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 3，共 7 张" aria-pressed="false"><img src="assets/me-3.jpg" alt="" width="1400" height="787" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 4，共 7 张" aria-pressed="false"><img src="assets/me-4.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 5，共 7 张" aria-pressed="false"><img src="assets/me-5.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 6，共 7 张" aria-pressed="false"><img src="assets/me-6.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 7，共 7 张" aria-pressed="false"><img src="assets/me-1-v2.jpg" alt="" width="1400" height="1366" loading="lazy" decoding="async"></button>
     </div>
     <div id="heroAlbum"></div>
   </div>
@@ -632,6 +642,41 @@
   }
   function stepLightbox(d) { if (lbList.length < 2) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; lbImg.src = lbList[lbIdx]; }
   function closeLb() { lb.classList.remove('open'); }
+
+  // 手风琴支持鼠标悬停、触摸点击和键盘方向键；点已展开的照片查看大图。
+  const portraitAccordion = document.getElementById('portraitAccordion');
+  if (portraitAccordion) {
+    const panels = [...portraitAccordion.querySelectorAll('.portrait-panel')];
+    const images = panels.map(panel => panel.querySelector('img').src);
+    let activeIndex = 0;
+    portraitAccordion.style.setProperty('--portrait-open-grow', String(.52 * (panels.length - 1) / .48));
+    const activate = index => {
+      activeIndex = index;
+      panels.forEach((panel, i) => {
+        panel.classList.toggle('is-active', i === index);
+        panel.setAttribute('aria-pressed', String(i === index));
+      });
+    };
+    panels.forEach((panel, index) => {
+      panel.addEventListener('pointerenter', event => {
+        if (event.pointerType === 'mouse') activate(index);
+      });
+      panel.addEventListener('pointerdown', () => { panel.dataset.wasActive = String(activeIndex === index); });
+      panel.addEventListener('focus', () => activate(index));
+      panel.addEventListener('click', event => {
+        if (event.detail === 0 || panel.dataset.wasActive === 'true') openLightbox(images, index);
+        else activate(index);
+      });
+      panel.addEventListener('keydown', event => {
+        const direction = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        if (!direction) return;
+        event.preventDefault();
+        const next = (index + direction + panels.length) % panels.length;
+        activate(next);
+        panels[next].focus();
+      });
+    });
+  }
 
   const albumMount = document.getElementById('albumMount');
   if (albumMount && window.ALBUM_SECTIONS) {
