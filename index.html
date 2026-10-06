@@ -60,6 +60,12 @@
     -webkit-mask-composite: xor; mask-composite: exclude;
     pointer-events: none;
   }
+  /* 全局叠加层不接收点击，玻璃高光与火花不会遮挡原有控件。 */
+  .interaction-fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; user-select: none; }
+  #specularFx { z-index: 310; }
+  #clickSparkFx { z-index: 400; }
+  .specular-rim { position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0; z-index: 2; background: conic-gradient(from var(--shine-angle, 0deg), transparent 0deg, #fff 40deg, #fff 50deg, transparent 90deg, transparent 180deg, #fff 220deg, #fff 230deg, transparent 270deg); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+  .btn-ghost { position: relative; }
 
   /* 导航 */
   .nav { position: fixed; top: 18px; left: 0; right: 0; margin: 0 auto; width: fit-content; z-index: 100; display: flex; align-items: center; gap: 26px; padding: 8px 10px 8px 22px; border-radius: 100px; }
@@ -175,7 +181,7 @@
   .portrait-panel.is-before-active { transform: rotateY(10deg); }
   .portrait-panel img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); filter: grayscale(.38) brightness(.66); transition: transform .25s cubic-bezier(.22,1,.36,1), filter .25s; }
   .portrait-panel::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.18)); opacity: 1; transition: opacity .25s; }
-  .portrait-panel.is-active { flex-grow: var(--portrait-open-grow, 24); transform: rotateY(0); border-color: rgba(255,255,255,.32); box-shadow: 0 28px 60px -24px rgba(0,0,0,.78); cursor: zoom-in; }
+  .portrait-panel.is-active { flex-grow: var(--portrait-open-grow, 28); transform: rotateY(0); border-color: rgba(255,255,255,.32); box-shadow: 0 28px 60px -24px rgba(0,0,0,.78); cursor: zoom-in; }
   .portrait-panel.is-active img { transform: scale(1); filter: none; }
   .portrait-panel.is-active::after { opacity: 0; }
   .portrait-panel:focus-visible { outline: 2px solid #d8b98a; outline-offset: 3px; }
@@ -276,13 +282,14 @@
     </div>
     <h3 class="strip-title reveal">个人形象 · 这是我</h3>
     <div class="portrait-accordion reveal" id="portraitAccordion" aria-label="个人形象照片画廊">
-      <button class="portrait-panel is-active" type="button" aria-label="查看个人照片 1，共 7 张" aria-pressed="true"><img src="assets/me-8.jpg" alt="" width="1400" height="1867" loading="eager" fetchpriority="high" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 2，共 7 张" aria-pressed="false"><img src="assets/me-2.jpg" alt="" width="1400" height="1867" loading="lazy" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 3，共 7 张" aria-pressed="false"><img src="assets/me-3.jpg" alt="" width="1400" height="787" loading="lazy" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 4，共 7 张" aria-pressed="false"><img src="assets/me-4.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 5，共 7 张" aria-pressed="false"><img src="assets/me-5.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 6，共 7 张" aria-pressed="false"><img src="assets/me-6.jpg" alt="" width="1400" height="1050" loading="lazy" decoding="async"></button>
-      <button class="portrait-panel" type="button" aria-label="查看个人照片 7，共 7 张" aria-pressed="false"><img src="assets/me-1-v2.jpg" alt="" width="1400" height="1366" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel is-active" type="button" aria-label="查看个人照片 1，共 8 张" aria-pressed="true"><img src="assets/me-8.jpg" alt="经幡前的个人照片" width="1400" height="1867" loading="eager" fetchpriority="high" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 2，共 8 张" aria-pressed="false"><img src="assets/me-9.jpg" alt="肇庆校服细节" width="1080" height="1440" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 3，共 8 张" aria-pressed="false"><img src="assets/me-2.jpg" alt="背着吉他的个人照片" width="1400" height="1867" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" aria-label="查看个人照片 4，共 8 张" aria-pressed="false"><img src="assets/me-1-v2.jpg" alt="个人自拍" width="1400" height="1366" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" data-people="3" aria-label="查看个人照片 5，共 8 张" aria-pressed="false"><img src="assets/me-6.jpg" alt="三人合照" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" data-people="11" aria-label="查看个人照片 6，共 8 张" aria-pressed="false"><img src="assets/me-3.jpg" alt="十一人合照" width="1400" height="787" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" data-people="11" aria-label="查看个人照片 7，共 8 张" aria-pressed="false"><img src="assets/me-5.jpg" alt="十一人合照" width="1400" height="1050" loading="lazy" decoding="async"></button>
+      <button class="portrait-panel" type="button" data-people="14" aria-label="查看个人照片 8，共 8 张" aria-pressed="false"><img src="assets/me-4.jpg" alt="十四人合照" width="1400" height="1050" loading="lazy" decoding="async"></button>
     </div>
     <div id="heroAlbum"></div>
   </div>
@@ -798,5 +805,6 @@
     }
   });
 </script>
+<script src="interaction-effects.js?v=20261006" defer></script>
 </body>
 </html>
