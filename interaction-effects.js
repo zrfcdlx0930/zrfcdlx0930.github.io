@@ -11,6 +11,19 @@
     return canvas;
   };
 
+  // 画布显示区域会随滚动条、弹层和缩放改变，绘制坐标必须以当前真实边界换算。
+  const measureCanvas = (canvas, limit) => {
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(rect.width, 1), height = Math.max(rect.height, 1);
+    const ratio = Math.min(window.devicePixelRatio || 1, limit);
+    const pixelWidth = Math.max(1, Math.round(width * ratio));
+    const pixelHeight = Math.max(1, Math.round(height * ratio));
+    const resized = canvas.width !== pixelWidth || canvas.height !== pixelHeight;
+    if (resized) { canvas.width = pixelWidth; canvas.height = pixelHeight; }
+    const scaleX = canvas.width / width, scaleY = canvas.height / height;
+    return { left: rect.left, top: rect.top, width, height, scaleX, scaleY, pixel: Math.min(scaleX, scaleY), resized };
+  };
+
   // 将 SpecularButton 的边缘着色器移植到一个共享画布，避免每个玻璃框各建一个 WebGL 上下文。
   const setupSpecular = () => {
     const selector = '.glass, .btn-ghost, .strip-arrow, .lb-nav, .lightbox .close';
@@ -22,9 +35,6 @@
     let lastTime = 0;
     let pointer = null;
     let touchTimer;
-    let width = document.documentElement.clientWidth;
-    let height = innerHeight;
-    let dpr = Math.min(devicePixelRatio || 1, 1.5);
     const states = [...document.querySelectorAll(selector)].map(element => ({ element, angle: 2.4, brightness: 0, rim: null }));
     const visible = new Set();
 
@@ -112,14 +122,9 @@
       if (!frame && !document.hidden) frame = requestAnimationFrame(paint);
     };
     const resize = () => {
-      width = document.documentElement.clientWidth;
-      height = innerHeight;
-      dpr = Math.min(devicePixelRatio || 1, 1.5);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
       requestPaint();
     };
+    if (window.ResizeObserver) new ResizeObserver(requestPaint).observe(canvas);
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         const state = states.find(item => item.element === entry.target);
@@ -139,7 +144,9 @@
       const dt = Math.min(lastTime ? (now - lastTime) / 1000 : 1 / 60, .05);
       lastTime = now;
       let settling = false;
+      const bounds = measureCanvas(canvas, 1.5);
       if (gl) {
+        if (bounds.resized) gl.viewport(0, 0, canvas.width, canvas.height);
         gl.disable(gl.SCISSOR_TEST);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.enable(gl.SCISSOR_TEST);
@@ -174,17 +181,22 @@
           return;
         }
         if (!gl || hidden || state.brightness < .003) return;
-        const left = Math.max(0, Math.floor((rect.left - 20) * dpr));
-        const bottom = Math.max(0, Math.floor((height - rect.bottom - 20) * dpr));
-        const right = Math.min(canvas.width, Math.ceil((rect.right + 20) * dpr));
-        const top = Math.min(canvas.height, Math.ceil((height - rect.top + 20) * dpr));
+        const left = Math.max(0, Math.floor((rect.left - bounds.left - 20) * bounds.scaleX));
+        const bottom = Math.max(0, Math.floor((bounds.height - (rect.bottom - bounds.top) - 20) * bounds.scaleY));
+        const right = Math.min(canvas.width, Math.ceil((rect.right - bounds.left + 20) * bounds.scaleX));
+        const top = Math.min(canvas.height, Math.ceil((bounds.height - (rect.top - bounds.top) + 20) * bounds.scaleY));
         if (right <= left || top <= bottom) return;
         gl.scissor(left, bottom, right - left, top - bottom);
-        gl.uniform2f(uniforms.uCenter, (rect.left + rect.width / 2) * dpr, (height - rect.top - rect.height / 2) * dpr);
-        gl.uniform2f(uniforms.uHalfSize, rect.width * dpr / 2, rect.height * dpr / 2);
-        gl.uniform1f(uniforms.uRadius, Math.min(parseFloat(getComputedStyle(element).borderTopLeftRadius) || 18, rect.width / 2, rect.height / 2) * dpr);
+        const style = getComputedStyle(element);
+        const corner = style.borderTopLeftRadius.split(/\s+/)[0];
+        const transformScale = Math.min(rect.width / (parseFloat(style.width) || rect.width), rect.height / (parseFloat(style.height) || rect.height));
+        const radius = corner.endsWith('%') ? Math.min(rect.width, rect.height) * parseFloat(corner) / 100 : (parseFloat(corner) || 0) * transformScale;
+        // 对齐原有 1px 边框的中线，避免再出现一条外移的轮廓。
+        gl.uniform2f(uniforms.uCenter, (rect.left - bounds.left + rect.width / 2) * bounds.scaleX, (bounds.height - (rect.top - bounds.top) - rect.height / 2) * bounds.scaleY);
+        gl.uniform2f(uniforms.uHalfSize, Math.max(0, (rect.width - 1) / 2) * bounds.scaleX, Math.max(0, (rect.height - 1) / 2) * bounds.scaleY);
+        gl.uniform1f(uniforms.uRadius, Math.max(0, Math.min(radius, rect.width / 2, rect.height / 2) - .5) * bounds.pixel);
         gl.uniform1f(uniforms.uAngle, state.angle);
-        gl.uniform1f(uniforms.uPx, dpr);
+        gl.uniform1f(uniforms.uPx, bounds.pixel);
         gl.uniform1f(uniforms.uIntensity, state.brightness);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       });
@@ -212,6 +224,8 @@
     window.addEventListener('site:overlay-change', requestPaint);
     window.addEventListener('scroll', requestPaint, { passive: true, capture: true });
     window.addEventListener('resize', resize, { passive: true });
+    window.visualViewport?.addEventListener('resize', resize, { passive: true });
+    window.visualViewport?.addEventListener('scroll', requestPaint, { passive: true });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { cancelAnimationFrame(frame); frame = 0; lastTime = 0; }
       else requestPaint();
@@ -228,26 +242,25 @@
     if (!context) { canvas.remove(); return; }
     let frame = 0;
     let sparks = [];
-    let width = document.documentElement.clientWidth;
-    let height = innerHeight;
+    let bounds;
+    const sync = () => {
+      bounds = measureCanvas(canvas, 2);
+      context.setTransform(bounds.scaleX, 0, 0, bounds.scaleY, 0, 0);
+    };
     const clear = () => {
       cancelAnimationFrame(frame);
       frame = 0;
       sparks = [];
-      context.clearRect(0, 0, width, height);
+      sync();
+      context.clearRect(0, 0, bounds.width, bounds.height);
     };
     const resize = () => {
-      width = document.documentElement.clientWidth;
-      height = innerHeight;
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
       clear();
     };
     const draw = now => {
       frame = 0;
-      context.clearRect(0, 0, width, height);
+      sync();
+      context.clearRect(0, 0, bounds.width, bounds.height);
       context.strokeStyle = '#fff';
       context.lineWidth = 2;
       sparks = sparks.filter(spark => now - spark.start < 400);
@@ -257,8 +270,8 @@
         const distance = eased * 15;
         const length = 10 * (1 - eased);
         context.beginPath();
-        context.moveTo(spark.x + distance * Math.cos(spark.angle), spark.y + distance * Math.sin(spark.angle));
-        context.lineTo(spark.x + (distance + length) * Math.cos(spark.angle), spark.y + (distance + length) * Math.sin(spark.angle));
+        context.moveTo(spark.x - bounds.left + distance * Math.cos(spark.angle), spark.y - bounds.top + distance * Math.sin(spark.angle));
+        context.lineTo(spark.x - bounds.left + (distance + length) * Math.cos(spark.angle), spark.y - bounds.top + (distance + length) * Math.sin(spark.angle));
         context.stroke();
       });
       if (sparks.length) frame = requestAnimationFrame(draw);
@@ -276,6 +289,9 @@
       if (!frame) frame = requestAnimationFrame(draw);
     }, true);
     window.addEventListener('resize', resize, { passive: true });
+    if (window.ResizeObserver) new ResizeObserver(sync).observe(canvas);
+    window.addEventListener('site:overlay-change', sync);
+    window.visualViewport?.addEventListener('resize', resize, { passive: true });
     document.addEventListener('visibilitychange', () => { if (document.hidden) clear(); });
     reducedMotion.addEventListener('change', clear);
     resize();
