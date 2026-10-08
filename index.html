@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>李子睿</title>
 <link rel="preload" as="image" href="assets/me-8.jpg">
+<link rel="stylesheet" href="media-gallery.css?v=20261008">
 <style>
   :root {
     --bg: #000;
@@ -378,22 +379,7 @@
       <h2 class="sec-title reveal">镜头留下的。</h2>
       <p class="sec-sub reveal">摄影与视频，记录我看过的世界。</p>
     </div>
-    <h3 class="strip-title reveal">摄影</h3>
-    <div id="albumMount"></div>
-    <h3 class="strip-title reveal">剪辑作品</h3>
-    <div class="strip reveal">
-      <video class="work-video" src="assets/videos/station-logo-ui.mp4" controls playsinline preload="none" aria-label="台标 UI 剪辑作品"></video>
-      <div class="s-item"><img src="assets/edit-1.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/edit-2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/video-hello.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/video-end.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/video-sports.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/v-award.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/v-award2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/v-catch.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/v-400days.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/v-class.jpg" alt="" loading="lazy" decoding="async"></div>
-    </div>
+    <div class="folder-list" id="workFolders"></div>
   </div>
 </section>
 
@@ -402,39 +388,7 @@
     <div class="sec-head">
       <h2 class="sec-title reveal">除此之外。</h2>
     </div>
-    <h3 class="strip-title reveal">小猫</h3>
-    <p class="strip-desc reveal">小猫慵懒可爱。</p>
-    <div class="strip reveal">
-      <div class="s-item"><img src="assets/cat-1.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/cat-2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/cat-3.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/cat-4.jpg" alt="" loading="lazy" decoding="async"></div>
-    </div>
-    <div class="video-strip reveal">
-      <video src="assets/videos/cat-1-v2.mp4" poster="assets/cat-video-1-poster.jpg" controls playsinline preload="none"></video>
-    </div>
-    <h3 class="strip-title reveal">吉他 / 贝斯</h3>
-    <p class="strip-desc reveal">吉他从弹唱到指弹，也在学习贝斯。</p>
-    <div class="strip reveal">
-      <div class="s-item"><img src="assets/guitar-1.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/guitar-2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div class="s-item"><img src="assets/guitar-3.jpg" alt="" loading="lazy" decoding="async"></div>
-    </div>
-    <div class="video-strip reveal" id="guitarVideos">
-      <video src="assets/videos/guitar-1-v2.mp4" poster="assets/guitar-video-1-poster.jpg" controls playsinline preload="none"></video>
-      <video src="assets/videos/guitar-2.mp4" controls playsinline preload="none"></video>
-      <video src="assets/videos/guitar-3.mp4" controls playsinline preload="none"></video>
-      <video src="assets/videos/guitar-4.mp4" controls playsinline preload="none"></video>
-      <video src="assets/videos/guitar-5.mp4" controls playsinline preload="none"></video>
-      <video src="assets/videos/guitar-6.mp4" controls playsinline preload="none"></video>
-      <video id="afterRainDemo" src="assets/videos/after-rain-demo.mp4" poster="assets/after-rain-demo-poster.jpg" width="1208" height="720" controls playsinline preload="none" aria-label="吉他／贝斯作品：After Rain Demo"></video>
-      <video src="assets/videos/guitar-8.mp4" poster="assets/guitar-video-8-poster.jpg" width="1280" height="720" controls playsinline preload="none" aria-label="吉他／贝斯作品：现场弹奏"></video>
-      <video src="assets/videos/guitar-9.mp4" poster="assets/guitar-video-9-poster.jpg" width="576" height="1280" controls playsinline preload="none" aria-label="吉他／贝斯作品：音乐录音二"></video>
-      <video src="assets/videos/guitar-10.mp4" poster="assets/guitar-video-10-poster.jpg" width="1280" height="720" controls playsinline preload="none" aria-label="吉他／贝斯作品：乐谱演示一"></video>
-      <video src="assets/videos/guitar-11.mp4" poster="assets/guitar-video-11-poster.jpg" width="1280" height="720" controls playsinline preload="none" aria-label="吉他／贝斯作品：编曲演示"></video>
-      <video src="assets/videos/guitar-12.mp4" poster="assets/guitar-video-12-poster.jpg" width="1280" height="688" controls playsinline preload="none" aria-label="吉他／贝斯作品：乐谱演示二"></video>
-      <video src="assets/videos/guitar-13.mp4" poster="assets/guitar-video-13-poster.jpg" width="1280" height="720" controls playsinline preload="none" aria-label="吉他／贝斯作品：弹奏片段"></video>
-    </div>
+    <div class="folder-list" id="interestFolders"></div>
   </div>
 </section>
 
@@ -453,10 +407,10 @@
   <div class="wrap"><div>© 李子睿</div><div>用镜头记录世界</div></div>
 </footer>
 
-<div class="lightbox" id="lightbox">
-  <span class="close" id="lb-close">×</span>
-  <button class="lb-nav prev hide" id="lb-prev" type="button">‹</button>
-  <button class="lb-nav next hide" id="lb-next" type="button">›</button>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="照片大图" aria-hidden="true">
+  <button class="close" id="lb-close" type="button" aria-label="关闭大图">×</button>
+<button class="lb-nav prev hide" id="lb-prev" type="button" aria-label="上一张照片">‹</button>
+<button class="lb-nav next hide" id="lb-next" type="button" aria-label="下一张照片">›</button>
   <img src="" alt="预览" id="lb-img" decoding="async">
 </div>
 
@@ -650,15 +604,31 @@
   const lbImg = document.getElementById('lb-img');
   const lbPrev = document.getElementById('lb-prev');
   const lbNext = document.getElementById('lb-next');
-  let lbList = [], lbIdx = 0;
+  let lbList = [], lbIdx = 0, lbReturnFocus = null, lbPreviousOverflow = '';
+  const overlayChanged = () => window.dispatchEvent(new Event('site:overlay-change'));
   function openLightbox(list, idx) {
+    if (!list.length) return;
+    if (!lb.classList.contains('open')) {
+      lbReturnFocus = document.activeElement;
+      lbPreviousOverflow = document.body.style.overflow;
+    }
     lbList = list; lbIdx = idx; lbImg.src = lbList[lbIdx];
     const multi = lbList.length > 1;
     lbPrev.classList.toggle('hide', !multi); lbNext.classList.toggle('hide', !multi);
-    lb.classList.add('open');
+    lb.classList.add('open'); lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('lb-close').focus({ preventScroll: true });
+    overlayChanged();
   }
   function stepLightbox(d) { if (lbList.length < 2) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; lbImg.src = lbList[lbIdx]; }
-  function closeLb() { lb.classList.remove('open'); }
+  function closeLb() {
+    if (!lb.classList.contains('open')) return;
+    lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true');
+    lbImg.removeAttribute('src');
+    document.body.style.overflow = lbPreviousOverflow;
+    if (lbReturnFocus?.isConnected && !lbReturnFocus.closest('[inert]')) lbReturnFocus.focus({ preventScroll: true });
+    overlayChanged();
+  }
 
   // 手风琴支持鼠标悬停、触摸点击和键盘方向键；点已展开的照片查看大图。
   const portraitAccordion = document.getElementById('portraitAccordion');
@@ -696,103 +666,70 @@
     });
   }
 
-  const albumMount = document.getElementById('albumMount');
-  if (albumMount && window.ALBUM_SECTIONS) {
-    const allFull = [];
-    window.ALBUM_SECTIONS.forEach(sec => {
-      if (!sec.photos.length) return;
-      const h = document.createElement('h3'); h.className = 'strip-title'; h.textContent = sec.title; albumMount.appendChild(h);
-      const strip = document.createElement('div'); strip.className = 'strip';
-      sec.photos.forEach(p => {
-        const d = document.createElement('div'); d.className = 's-item';
-        const img = document.createElement('img'); img.src = p.t; img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
-        d.appendChild(img);
-        const fullIdx = allFull.push(p.f) - 1;
-        d.addEventListener('click', () => openLightbox(allFull, fullIdx));
-        strip.appendChild(d);
-      });
-      albumMount.appendChild(strip);
-    });
-  }
-
-  document.querySelectorAll('.strip .s-item, .strip').forEach(() => {});
-  document.querySelectorAll('.strip').forEach(strip => {
-    strip.querySelectorAll('.s-item').forEach(item => {
-      if (item.dataset.bound) return; item.dataset.bound = '1';
-      const imgs = [...strip.querySelectorAll('.s-item img')].map(i => i.src);
-      item.addEventListener('click', () => openLightbox(imgs, imgs.indexOf(item.querySelector('img').src)));
-    });
-  });
-
-  // 相册行左右箭头：点击翻页
-  document.querySelectorAll('.strip, .video-strip').forEach(strip => {
-    if (strip.dataset.wrapped) return; strip.dataset.wrapped = '1';
-    const wrap = document.createElement('div');
-    wrap.className = 'strip-wrap';
-    strip.parentNode.insertBefore(wrap, strip);
-    wrap.appendChild(strip);
-    const mk = (cls, dir, label) => {
-      const b = document.createElement('button');
-      b.className = 'strip-arrow ' + cls; b.type = 'button';
-      b.textContent = dir < 0 ? '‹' : '›';
-      b.setAttribute('aria-label', label);
-      b.addEventListener('click', () => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: 'smooth' }));
-      wrap.appendChild(b);
-    };
-    mk('left', -1, '往前翻'); mk('right', 1, '往后翻');
-  });
-
-  // 将 FoldText 效果用于标题与关键信息，正文和按钮保持原本的可读性
-  const foldTargets = document.querySelectorAll([
+  // 动态文件夹和弹层标题复用同一套入场、折叠动画，避免重复绑定。
+  const foldSelector = [
     '.hero h1', '.sec-title', '.strip-title', '.contact .big',
-    '.tl-item h3', '.honours h3', '.fact .t', '.honour .nm', '.skill-row h3'
-  ].join(','));
+    '.tl-item h3', '.honours h3', '.fact .t', '.honour .nm', '.skill-row h3',
+    '.folder-row h3', '.gallery-title'
+  ].join(',');
   const foldObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (entry.intersectionRatio >= 0.18) {
-        entry.target.classList.add('fold-in');
-      } else if (!entry.isIntersecting) {
-        // 标题完全离开屏幕后复位，再次上滑或下滑进入时会重新展开
-        entry.target.classList.remove('fold-in');
-      }
+      if (entry.intersectionRatio >= 0.18) entry.target.classList.add('fold-in');
+      else if (!entry.isIntersecting) entry.target.classList.remove('fold-in');
     });
   }, { threshold: [0, 0.18], rootMargin: '0px 0px -6% 0px' });
-
-  foldTargets.forEach(target => {
-    if (target.dataset.foldReady) return;
-    target.dataset.foldReady = '1';
-    target.classList.add('fold-text');
-    target.setAttribute('aria-label', target.innerText.replace(/\s+/g, ' ').trim());
-    let index = 0;
-    [...target.childNodes].forEach(node => {
-      if (node.nodeName === 'BR') return;
-      if (node.nodeType !== Node.TEXT_NODE) return;
-      const fragment = document.createDocumentFragment();
-      Array.from(node.textContent).forEach(char => {
-        const piece = document.createElement('span');
-        piece.className = 'fold-text-piece';
-        piece.setAttribute('aria-hidden', 'true');
-        piece.style.setProperty('--fold-delay', `${Math.min(index * 38, 760)}ms`);
-        piece.textContent = char === ' ' ? '\u00a0' : char;
-        fragment.appendChild(piece);
-        index += 1;
+  function registerMotion(root = document) {
+    root.querySelectorAll('.reveal, .blur-reveal').forEach(element => io.observe(element));
+    const targets = [...root.querySelectorAll(foldSelector)];
+    if (root instanceof Element && root.matches(foldSelector)) targets.unshift(root);
+    targets.forEach(target => {
+      if (target.dataset.foldReady) return;
+      target.dataset.foldReady = '1';
+      target.classList.add('fold-text');
+      target.setAttribute('aria-label', target.innerText.replace(/\s+/g, ' ').trim());
+      let index = 0;
+      [...target.childNodes].forEach(node => {
+        if (node.nodeType !== Node.TEXT_NODE) return;
+        const fragment = document.createDocumentFragment();
+        Array.from(node.textContent).forEach(char => {
+          const piece = document.createElement('span');
+          piece.className = 'fold-text-piece';
+          piece.setAttribute('aria-hidden', 'true');
+          piece.style.setProperty('--fold-delay', Math.min(index * 38, 760) + 'ms');
+          piece.textContent = char === ' ' ? '\u00a0' : char;
+          fragment.appendChild(piece); index += 1;
+        });
+        node.replaceWith(fragment);
       });
-      node.replaceWith(fragment);
+      foldObserver.observe(target);
     });
-    foldObserver.observe(target);
-  });
+  }
+  registerMotion();
 
   document.getElementById('lb-close').addEventListener('click', closeLb);
   lbPrev.addEventListener('click', e => { e.stopPropagation(); stepLightbox(-1); });
   lbNext.addEventListener('click', e => { e.stopPropagation(); stepLightbox(1); });
   lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeLb();
-    if (lb.classList.contains('open')) {
-      if (e.key === 'ArrowLeft') stepLightbox(-1);
-      if (e.key === 'ArrowRight') stepLightbox(1);
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeLb(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); stepLightbox(e.key === 'ArrowLeft' ? -1 : 1); }
+    if (e.key === 'Tab') {
+      const controls = [...lb.querySelectorAll('button')].filter(button => !button.classList.contains('hide'));
+      const first = controls[0], last = controls[controls.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
+  window.SiteUI = {
+    openLightbox, closeLightbox: closeLb, registerMotion,
+    isLightboxOpen: () => lb.classList.contains('open'),
+    refreshTitle(target, text) {
+      foldObserver.unobserve(target); target.textContent = text;
+      delete target.dataset.foldReady; target.classList.remove('fold-in', 'fold-text');
+      registerMotion(target);
+    }
+  };
 
   const mc = document.getElementById('mailCopy');
   const MAIL = 'lzr13129794515@gmail.com';
@@ -805,6 +742,7 @@
     }
   });
 </script>
-<script src="interaction-effects.js?v=20261006" defer></script>
+<script src="media-gallery.js?v=20261008" defer></script>
+<script src="interaction-effects.js?v=20261008" defer></script>
 </body>
 </html>

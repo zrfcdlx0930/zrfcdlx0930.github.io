@@ -145,10 +145,12 @@
         gl.enable(gl.SCISSOR_TEST);
       }
       const lightbox = document.querySelector('.lightbox.open');
+      const gallery = document.querySelector('.gallery-dialog.is-open');
+      const activeOverlay = lightbox || gallery;
       visible.forEach(state => {
         const element = state.element;
         const rect = element.getBoundingClientRect();
-        const hidden = !rect.width || !rect.height || element.closest('.reveal:not(.in), .blur-reveal:not(.in)') || (lightbox && !lightbox.contains(element)) || (element.closest('.lightbox') && !lightbox);
+        const hidden = !rect.width || !rect.height || element.closest('.reveal:not(.in), .blur-reveal:not(.in)') || (activeOverlay && !activeOverlay.contains(element)) || (element.closest('.lightbox') && !lightbox) || (element.closest('.gallery-dialog') && !gallery);
         let targetBrightness = 0;
         let targetAngle = state.angle;
         if (!hidden && pointer) {
@@ -207,6 +209,7 @@
     document.addEventListener('focusin', requestPaint);
     document.addEventListener('focusout', requestPaint);
     document.addEventListener('click', requestPaint, true);
+    window.addEventListener('site:overlay-change', requestPaint);
     window.addEventListener('scroll', requestPaint, { passive: true, capture: true });
     window.addEventListener('resize', resize, { passive: true });
     document.addEventListener('visibilitychange', () => {
