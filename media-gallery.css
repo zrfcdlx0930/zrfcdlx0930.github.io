@@ -39,6 +39,7 @@
 .gallery-inner { max-width: 1080px; margin: 0 auto; padding: 24px 26px 80px; }
 .gallery-header { position: sticky; top: 18px; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 28px; border-radius: 18px; background: rgba(20,21,25,.88); }
 .gallery-header.glass:hover { transform: none; }
+.gallery-header.glass { position: sticky; }
 .gallery-title { font-family: var(--font-head); font-weight: 400; font-size: clamp(32px,5vw,48px); line-height: 1.2; margin: 0; }
 .gallery-description { font-size: 15px; color: rgba(255,255,255,.7); margin-top: 10px; max-width: 40ch; }
 .gallery-count { font-size: 13px; color: #aaa; margin-top: 8px; }
