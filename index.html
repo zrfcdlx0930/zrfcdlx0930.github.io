@@ -679,6 +679,7 @@
     });
   }, { threshold: [0, 0.18], rootMargin: '0px 0px -6% 0px' });
   function registerMotion(root = document) {
+    if (root instanceof Element && root.matches('.reveal, .blur-reveal')) io.observe(root);
     root.querySelectorAll('.reveal, .blur-reveal').forEach(element => io.observe(element));
     const targets = [...root.querySelectorAll(foldSelector)];
     if (root instanceof Element && root.matches(foldSelector)) targets.unshift(root);

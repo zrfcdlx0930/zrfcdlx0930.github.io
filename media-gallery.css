@@ -34,7 +34,7 @@
 @keyframes folder-media-drift { 0%,100% { translate: 0 0; } 50% { translate: 0 -3px; } }
 
 /* 全屏画廊在自有滚动容器中展示；高光和火花继续沿用全站的上层画布。 */
-.gallery-dialog { position: fixed; inset: 0; z-index: 200; overflow-y: auto; overscroll-behavior: contain; background: rgba(4,5,8,.97); color: var(--text); scrollbar-width: thin; scrollbar-color: #53535a transparent; }
+.gallery-dialog { position: fixed; inset: 0; z-index: 200; overflow-y: auto; overscroll-behavior: contain; background: #050608; color: var(--text); scrollbar-width: thin; scrollbar-color: #53535a transparent; }
 .gallery-dialog[hidden] { display: none; }
 .gallery-inner { max-width: 1080px; margin: 0 auto; padding: 24px 26px 80px; }
 .gallery-header { position: sticky; top: 18px; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 24px 28px; border-radius: 18px; background: rgba(20,21,25,.88); }

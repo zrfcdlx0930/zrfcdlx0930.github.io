@@ -159,6 +159,7 @@
   let inertStates = [];
   let parentHash = '';
   let renderedHash = '';
+  let savedRestoration = null;
 
   const releaseMedia = () => {
     videoView.strip.querySelectorAll('video').forEach(element => {
@@ -167,6 +168,8 @@
     photoView.strip.replaceChildren(); videoView.strip.replaceChildren();
   };
   const lockPage = () => {
+    if (savedRestoration === null) savedRestoration = history.scrollRestoration;
+    history.scrollRestoration = 'manual';
     scrollPosition = window.scrollY;
     savedStyle = Object.fromEntries(['position', 'top', 'left', 'right', 'width', 'overflow'].map(key => [key, document.body.style[key]]));
     Object.assign(document.body.style, { position: 'fixed', top: -scrollPosition + 'px', left: '0', right: '0', width: '100%', overflow: 'hidden' });
@@ -174,7 +177,7 @@
     inertStates = elements.map(element => [element, element.inert]);
     elements.forEach(element => { element.inert = true; });
   };
-  const unlockPage = () => {
+  const unlockPage = focusTarget => {
     inertStates.forEach(([element, previous]) => { element.inert = previous; });
     inertStates = [];
     if (savedStyle) Object.assign(document.body.style, savedStyle);
@@ -183,6 +186,18 @@
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, scrollPosition);
     document.documentElement.style.scrollBehavior = previousBehavior;
+    const returnScroll = scrollPosition;
+    // 等浏览器完成历史与片段导航后，再恢复精确位置和文件夹焦点。
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!dialog.hidden) return;
+      const behavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, returnScroll);
+      document.documentElement.style.scrollBehavior = behavior;
+      if (focusTarget?.isConnected) focusTarget.focus({ preventScroll: true });
+      if (savedRestoration !== null) history.scrollRestoration = savedRestoration;
+      savedRestoration = null;
+    }));
   };
   const render = (collection, targetId) => {
     const wasClosed = dialog.hidden;
@@ -234,8 +249,7 @@
     if (dialog.hidden) return;
     ui.closeLightbox(); releaseMedia();
     dialog.classList.remove('is-open'); dialog.hidden = true; current = null; closing = false; renderedHash = '';
-    unlockPage();
-    if (opener?.isConnected) opener.focus({ preventScroll: true });
+    unlockPage(opener);
     opener = null;
     window.dispatchEvent(new Event('site:overlay-change'));
   };
@@ -248,11 +262,13 @@
     if (!collection) { hide(); return; }
     if (!dialog.hidden && renderedHash === hash) return;
     renderedHash = hash;
-    if (!opener) opener = triggers.get(id);
+    opener = triggers.get(id);
     render(collection, hash === '#afterRainDemo' ? 'afterRainDemo' : null);
   };
   function navigate(id, button) {
     if (!byId.has(id)) return;
+    if (savedRestoration === null) savedRestoration = history.scrollRestoration;
+    history.scrollRestoration = 'manual';
     parentHash = dialog.hidden ? location.hash : parentHash;
     opener = button || triggers.get(id);
     history.pushState({ ...history.state, mediaFolderEntry: true }, '', '#gallery/' + id);
