@@ -7,6 +7,7 @@
 .folder-description { max-width: 30ch; font-size: 17px; color: rgba(255,255,255,.7); font-weight: 300; line-height: 1.8; }
 .folder-count { margin-top: 14px; font-size: 13px; color: #aaa; }
 .folder-stage { height: 330px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; position: relative; }
+.folder-touch-hint { display: none; position: absolute; bottom: 6px; left: 0; right: 0; color: rgba(255,255,255,.78); font-size: 12px; line-height: 20px; text-align: center; }
 .folder-float { --ff-w: 200px; --ff-h: 148px; --ff-r: 14px; --ff-tab: 14px; --ff-open: 520ms; --ff-close: 312ms; --ff-stagger: 45ms; --preview-w: 108px; position: relative; width: var(--ff-w); padding-top: var(--ff-tab); font-family: inherit; }
 .folder-float__folder { position: relative; width: var(--ff-w); height: var(--ff-h); }
 .folder-float__back { position: absolute; inset: 0; border-radius: var(--ff-r); background: #3f3f46; transform: perspective(600px) rotateX(8deg); transform-origin: 50% 100%; }
@@ -95,3 +96,12 @@
   .folder-preview-media { animation: none; }
   .gallery-picture { transition: none; }
 }
+/* 触屏预留提示空间；预览仍只占右列，控件保持可点按尺寸。 */
+@media (hover: none), (pointer: coarse) {
+  .folder-stage { padding-bottom: 38px; }
+  .folder-touch-hint { display: block; }
+  .gallery-dialog .strip-arrow, .gallery-close { min-width: 44px; min-height: 44px; }
+  .gallery-inner { padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+  .gallery-header { top: calc(10px + env(safe-area-inset-top)); }
+}
+.folder-float[data-touch-input] + .folder-touch-hint { display: block; }

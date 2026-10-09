@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>李子睿</title>
 <link rel="preload" as="image" href="assets/me-8.jpg">
-<link rel="stylesheet" href="media-gallery.css?v=20261008-align2">
+<link rel="stylesheet" href="media-gallery.css?v=20261009-touch1">
 <style>
   :root {
     --bg: #000;
@@ -186,6 +186,13 @@
   .portrait-panel.is-active img { transform: scale(1); filter: none; }
   .portrait-panel.is-active::after { opacity: 0; }
   .portrait-panel:focus-visible { outline: 2px solid #d8b98a; outline-offset: 3px; }
+  .portrait-footer { display: none; }
+  .portrait-controls { display: flex; flex-shrink: 0; align-items: center; gap: 12px; }
+  .portrait-control { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; color: var(--text); cursor: pointer; }
+  .portrait-control svg { width: 20px; height: 20px; }
+  .portrait-control:disabled { opacity: .35; cursor: default; }
+  .portrait-control:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .portrait-status { min-width: 40px; color: var(--text-2); font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; }
 
   /* 联系 */
   .contact { text-align: center; padding: 140px 0 110px; }
@@ -209,8 +216,12 @@
   .lb-nav.hide { display: none; }
 
   @media (max-width: 760px) {
-    .nav-links { display: none; }
-    .nav { padding: 8px 18px; gap: 0; }
+    html { scroll-padding-top: calc(88px + env(safe-area-inset-top)); }
+    .nav { top: calc(10px + env(safe-area-inset-top)); width: calc(100% - 24px); max-width: 430px; padding: 4px 6px; gap: 0; }
+    .nav .brand { display: none; }
+    .nav-links { display: flex; width: 100%; gap: 0; }
+    .nav-links a { display: flex; flex: 1 1 0; min-width: 0; min-height: 44px; align-items: center; justify-content: center; padding: 8px 4px; color: rgba(255,255,255,.8); font-size: 13px; }
+    .nav-links a.active { color: #000; }
     .about-grid { grid-template-columns: 1fr; gap: 36px; }
     .s-item { height: min(260px, 62vw); }
     section { padding: 80px 0; }
@@ -218,9 +229,19 @@
     .strip-title { margin: 40px 0 16px; font-size: 20px; }
     .hero { padding-top: 100px; }
   }
-  @media (max-width: 520px) {
-    .portrait-accordion { flex-direction: column; height: min(800px, 95vh); min-height: 620px; }
-    .portrait-panel, .portrait-panel.is-before-active { min-height: 48px; transform: none; }
+  /* 手机和无悬停触屏使用同一组照片滑动，电脑手风琴不变。 */
+  @media (max-width: 760px), (hover: none) and (pointer: coarse) {
+    .portrait-accordion { position: relative; flex-direction: row; gap: 12px; height: clamp(280px, 64svh, 460px); min-height: 0; overflow-x: auto; overflow-y: hidden; perspective: none; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+    .portrait-accordion::-webkit-scrollbar { display: none; }
+    .portrait-panel, .portrait-panel.is-active, .portrait-panel.is-before-active { flex: 0 0 88%; min-height: 0; height: 100%; transform: none; scroll-snap-align: center; cursor: zoom-in; transition: border-color .25s; }
+    .portrait-panel img, .portrait-panel.is-active img { transform: none; filter: none; }
+    .portrait-panel::after { display: none; }
+    .portrait-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+    .portrait-hint { color: rgba(255,255,255,.7); font-size: 12px; line-height: 1.6; }
+    .lightbox .close { width: 44px; height: 44px; top: calc(14px + env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); }
+    .strip-arrow { width: 44px; height: 44px; }
+    .lb-nav.prev { left: max(10px, env(safe-area-inset-left)); }
+    .lb-nav.next { right: max(10px, env(safe-area-inset-right)); }
   }
   @media (max-width: 480px) {
     .wrap { padding: 0 18px; }
@@ -291,6 +312,14 @@
       <button class="portrait-panel" type="button" data-people="11" aria-label="查看个人照片 6，共 8 张" aria-pressed="false"><img src="assets/me-3.jpg" alt="十一人合照" width="1400" height="787" loading="lazy" decoding="async"></button>
       <button class="portrait-panel" type="button" data-people="11" aria-label="查看个人照片 7，共 8 张" aria-pressed="false"><img src="assets/me-5.jpg" alt="十一人合照" width="1400" height="1050" loading="lazy" decoding="async"></button>
       <button class="portrait-panel" type="button" data-people="14" aria-label="查看个人照片 8，共 8 张" aria-pressed="false"><img src="assets/me-4.jpg" alt="十四人合照" width="1400" height="1050" loading="lazy" decoding="async"></button>
+    </div>
+    <div class="portrait-footer">
+      <p class="portrait-hint">滑动切换 · 点照片查看大图</p>
+      <div class="portrait-controls" aria-label="个人照片翻页">
+        <button class="portrait-control glass" id="portrait-prev" type="button" aria-label="上一张个人照片" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="portrait-status" id="portrait-status" role="status" aria-live="polite">1／8</span>
+        <button class="portrait-control glass" id="portrait-next" type="button" aria-label="下一张个人照片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>
     <div id="heroAlbum"></div>
   </div>
@@ -594,7 +623,7 @@
 
   const links = document.querySelectorAll('[data-nav]');
   window.addEventListener('scroll', () => {
-    const y = window.scrollY + 120;
+    const y = window.scrollY + document.getElementById('nav').getBoundingClientRect().bottom + 16;
     let cur = '';
     document.querySelectorAll('section[id]').forEach(s => { if (s.offsetTop <= y) cur = s.id; });
     links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
@@ -630,12 +659,18 @@
     overlayChanged();
   }
 
-  // 手风琴支持鼠标悬停、触摸点击和键盘方向键；点已展开的照片查看大图。
+  // 电脑保留手风琴，手机滑动后点图直接放大；拖动不会误触大图。
   const portraitAccordion = document.getElementById('portraitAccordion');
   if (portraitAccordion) {
     const panels = [...portraitAccordion.querySelectorAll('.portrait-panel')];
     const images = panels.map(panel => panel.querySelector('img').src);
+    const carousel = matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const previous = document.getElementById('portrait-prev');
+    const nextButton = document.getElementById('portrait-next');
+    const status = document.getElementById('portrait-status');
     let activeIndex = 0;
+    let gesture = null, suppressClickUntil = 0, scrollFrame = 0, resizeFrame = 0;
     portraitAccordion.style.setProperty('--portrait-open-grow', String(.8 * (panels.length - 1) / .2));
     const activate = index => {
       activeIndex = index;
@@ -644,26 +679,74 @@
         panel.classList.toggle('is-before-active', i < index);
         panel.setAttribute('aria-pressed', String(i === index));
       });
+      previous.disabled = index === 0; nextButton.disabled = index === panels.length - 1;
+      status.textContent = (index + 1) + '／' + panels.length;
     };
+    const scrollToPanel = (index, animate = true) => {
+      activate(index);
+      if (!carousel.matches) return;
+      const panel = panels[index];
+      portraitAccordion.scrollTo({ left: panel.offsetLeft - (portraitAccordion.clientWidth - panel.offsetWidth) / 2, behavior: animate && !reducedMotion.matches ? 'smooth' : 'instant' });
+    };
+    portraitAccordion.addEventListener('pointerdown', event => {
+      suppressClickUntil = 0;
+      gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+    }, { passive: true });
+    portraitAccordion.addEventListener('pointermove', event => {
+      if (gesture?.id === event.pointerId && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 10) gesture.moved = true;
+    }, { passive: true });
+    const finishGesture = event => {
+      if (gesture?.id !== event.pointerId) return;
+      if (gesture.moved || event.type === 'pointercancel') suppressClickUntil = performance.now() + 500;
+      const finished = gesture;
+      setTimeout(() => { if (gesture === finished) gesture = null; }, 0);
+    };
+    portraitAccordion.addEventListener('pointerup', finishGesture, { passive: true });
+    portraitAccordion.addEventListener('pointercancel', finishGesture, { passive: true });
+    portraitAccordion.addEventListener('scroll', () => {
+      if (!carousel.matches || scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        const box = portraitAccordion.getBoundingClientRect();
+        const center = box.left + box.width / 2;
+        const closest = panels.reduce((best, panel, index) => {
+          const rect = panel.getBoundingClientRect();
+          const distance = Math.abs(rect.left + rect.width / 2 - center);
+          return distance < best.distance ? { index, distance } : best;
+        }, { index: activeIndex, distance: Infinity });
+        activate(closest.index);
+      });
+    }, { passive: true });
     panels.forEach((panel, index) => {
       panel.addEventListener('pointerenter', event => {
-        if (event.pointerType === 'mouse') activate(index);
+        if (!carousel.matches && event.pointerType === 'mouse') activate(index);
       });
       panel.addEventListener('pointerdown', () => { panel.dataset.wasActive = String(activeIndex === index); });
-      panel.addEventListener('focus', () => activate(index));
+      panel.addEventListener('focus', () => { if (!gesture) scrollToPanel(index, false); });
       panel.addEventListener('click', event => {
-        if (event.detail === 0 || panel.dataset.wasActive === 'true') openLightbox(images, index);
+        if (event.detail !== 0 && (gesture?.moved || performance.now() < suppressClickUntil)) { event.preventDefault(); return; }
+        if (carousel.matches || event.detail === 0 || panel.dataset.wasActive === 'true') { activate(index); openLightbox(images, index); }
         else activate(index);
       });
       panel.addEventListener('keydown', event => {
         const direction = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
         if (!direction) return;
         event.preventDefault();
-        const next = (index + direction + panels.length) % panels.length;
-        activate(next);
+        const next = carousel.matches ? Math.max(0, Math.min(panels.length - 1, index + direction)) : (index + direction + panels.length) % panels.length;
+        scrollToPanel(next, false);
         panels[next].focus();
       });
     });
+    previous.addEventListener('click', () => scrollToPanel(Math.max(0, activeIndex - 1)));
+    nextButton.addEventListener('click', () => scrollToPanel(Math.min(panels.length - 1, activeIndex + 1)));
+    const alignPortrait = () => {
+      cancelAnimationFrame(resizeFrame);
+      const selected = activeIndex;
+      resizeFrame = requestAnimationFrame(() => scrollToPanel(selected, false));
+    };
+    carousel.addEventListener('change', alignPortrait);
+    window.addEventListener('resize', alignPortrait);
+    activate(activeIndex);
   }
 
   // 动态文件夹和弹层标题复用同一套入场、折叠动画，避免重复绑定。
@@ -743,7 +826,7 @@
     }
   });
 </script>
-<script src="media-gallery.js?v=20261008-2" defer></script>
+<script src="media-gallery.js?v=20261009-touch1" defer></script>
 <script src="interaction-effects.js?v=20261008-align1" defer></script>
 </body>
 </html>

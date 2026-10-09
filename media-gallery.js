@@ -48,6 +48,14 @@
     return [photos ? photos + ' 张照片' : '', videos ? videos + ' 段视频' : ''].filter(Boolean).join(' · ');
   };
   const roots = [];
+  const previewSetters = new Map();
+  let touchFolder = null, lastInputTouch = false;
+  const closePreviews = () => previewSetters.forEach(setPreview => setPreview(false));
+  document.addEventListener('pointerdown', event => {
+    lastInputTouch = event.pointerType === 'touch' || event.pointerType === 'pen';
+    if (touchFolder && !touchFolder.parentElement.contains(event.target)) previewSetters.get(touchFolder)(false);
+  }, { capture: true, passive: true });
+  document.addEventListener('keydown', () => { lastInputTouch = false; }, { capture: true });
   const triggers = new Map();
   const node = (tag, className, text) => {
     const element = document.createElement(tag);
@@ -64,10 +72,15 @@
     text.append(node('h3', '', collection.title), node('p', 'folder-description', collection.description), node('p', 'folder-count', countText(collection)));
     const stage = node('div', 'folder-stage');
     const root = node('div', 'folder-float');
+    const hint = node('p', 'folder-touch-hint', '轻点预览');
     root.innerHTML = '<div class="folder-float__items" aria-hidden="true"></div><div class="folder-float__folder"><span class="folder-float__back" aria-hidden="true"></span><span class="folder-float__paper" aria-hidden="true"></span><span class="folder-float__front" aria-hidden="true"><span class="folder-float__label"></span><span class="folder-float__sub"></span></span><button class="folder-float__trigger" type="button" aria-haspopup="dialog"></button></div>';
     root.querySelector('.folder-float__label').textContent = collection.title;
     root.querySelector('.folder-float__sub').textContent = countText(collection);
     const trigger = root.querySelector('button');
+    const previewId = 'folder-preview-' + collection.id;
+    root.querySelector('.folder-float__items').id = previewId;
+    trigger.setAttribute('aria-controls', previewId);
+    trigger.setAttribute('aria-expanded', 'false');
     trigger.setAttribute('aria-label', '打开' + collection.title + '文件夹，' + countText(collection));
     triggers.set(collection.id, trigger);
     let previews = collection.items.slice(0, 3);
@@ -88,21 +101,61 @@
       card.appendChild(frame);
       root.querySelector('.folder-float__items').appendChild(card);
     });
-    const setPreview = open => {
-      root.toggleAttribute('data-open', open && !document.hidden && dialog?.hidden !== false);
+    let gesture = null, suppressClickUntil = 0;
+    const setPreview = (open, touch = false) => {
+      const visible = open && !document.hidden && dialog.hidden && !ui.isLightboxOpen();
+      if (visible && touch) {
+        previewSetters.forEach((setter, other) => { if (other !== root) setter(false); });
+        touchFolder = root;
+      } else if (!visible && touchFolder === root) touchFolder = null;
+      root.toggleAttribute('data-open', visible);
+      trigger.setAttribute('aria-expanded', String(visible));
+      hint.textContent = visible ? '再点打开' : '轻点预览';
+      const touchMode = root.hasAttribute('data-touch-input') || !pointerHover.matches;
+      trigger.setAttribute('aria-label', (touchMode && !visible ? '预览' : '打开') + collection.title + '文件夹，' + countText(collection));
     };
+    previewSetters.set(root, setPreview);
     root.querySelector('.folder-float__folder').addEventListener('pointerenter', event => {
       if (event.pointerType !== 'touch' && pointerHover.matches) setPreview(true);
     });
-    stage.addEventListener('pointerleave', () => {
+    stage.addEventListener('pointerleave', event => {
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') return;
       if (!stage.contains(document.activeElement)) setPreview(false);
     });
-    trigger.addEventListener('focus', () => setPreview(true));
+    trigger.addEventListener('focus', () => { if (!lastInputTouch) setPreview(true); });
     stage.addEventListener('focusout', event => {
       if (!stage.contains(event.relatedTarget) && !stage.matches(':hover')) setPreview(false);
     });
-    trigger.addEventListener('click', () => navigate(collection.id, trigger));
-    stage.appendChild(root); row.append(text, stage);
+    trigger.addEventListener('pointerdown', event => {
+      const touch = event.pointerType === 'touch' || event.pointerType === 'pen';
+      root.toggleAttribute('data-touch-input', touch);
+      suppressClickUntil = 0;
+      // 在浏览器聚焦按钮之前保存展开状态，第一次轻点只能预览。
+      gesture = { id: event.pointerId, touch, wasOpen: root.hasAttribute('data-open'), x: event.clientX, y: event.clientY, moved: false };
+    }, { passive: true });
+    trigger.addEventListener('pointermove', event => {
+      if (gesture?.id === event.pointerId && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 10) gesture.moved = true;
+    }, { passive: true });
+    const finishGesture = event => {
+      if (gesture?.id !== event.pointerId) return;
+      if (gesture.moved || event.type === 'pointercancel') {
+        suppressClickUntil = performance.now() + 500;
+        setPreview(false);
+      }
+      const finished = gesture;
+      setTimeout(() => { if (gesture === finished) gesture = null; }, 0);
+    };
+    trigger.addEventListener('pointerup', finishGesture, { passive: true });
+    trigger.addEventListener('pointercancel', finishGesture, { passive: true });
+    trigger.addEventListener('click', event => {
+      if (event.detail !== 0 && (gesture?.moved || performance.now() < suppressClickUntil)) { event.preventDefault(); return; }
+      const touch = event.detail !== 0 && (gesture?.touch || event.pointerType === 'touch' || event.pointerType === 'pen' || !pointerHover.matches);
+      if (touch && !(gesture ? gesture.wasOpen : root.hasAttribute('data-open'))) {
+        root.setAttribute('data-touch-input', ''); setPreview(true, true); return;
+      }
+      navigate(collection.id, trigger);
+    });
+    stage.append(root, hint); row.append(text, stage);
     document.getElementById(collection.section === 'works' ? 'workFolders' : 'interestFolders').appendChild(row);
     roots.push(root);
     ui.registerMotion(row);
@@ -111,13 +164,13 @@
   const folderObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       entry.target.toggleAttribute('data-visible', entry.isIntersecting);
-      if (!entry.isIntersecting) entry.target.removeAttribute('data-open');
+      if (!entry.isIntersecting) previewSetters.get(entry.target)(false);
     });
   });
   roots.forEach(root => folderObserver.observe(root));
   document.addEventListener('visibilitychange', () => {
     document.documentElement.classList.toggle('media-page-hidden', document.hidden);
-    if (document.hidden) roots.forEach(root => root.removeAttribute('data-open'));
+    if (document.hidden) closePreviews();
   });
 
   // 弹层固定在导航与大图灯箱之间，让全站点击火花和高光仍可正常显示。
@@ -204,7 +257,7 @@
     if (wasClosed) lockPage();
     ui.closeLightbox(); releaseMedia();
     current = collection;
-    roots.forEach(root => root.removeAttribute('data-open'));
+    closePreviews();
     dialog.hidden = false; dialog.classList.add('is-open');
     description.textContent = collection.description; count.textContent = countText(collection);
     closeButton.setAttribute('aria-label', '关闭' + collection.title + '画廊，返回首页');
