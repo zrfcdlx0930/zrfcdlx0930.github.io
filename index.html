@@ -670,7 +670,7 @@
     const nextButton = document.getElementById('portrait-next');
     const status = document.getElementById('portrait-status');
     let activeIndex = 0;
-    let gesture = null, suppressClickUntil = 0, scrollFrame = 0, resizeFrame = 0;
+    let gesture = null, suppressClickUntil = 0, scrollFrame = 0, resizeFrame = 0, syncingLayout = false, hoverFreezeUntil = 0;
     portraitAccordion.style.setProperty('--portrait-open-grow', String(.8 * (panels.length - 1) / .2));
     const activate = index => {
       activeIndex = index;
@@ -704,9 +704,11 @@
     portraitAccordion.addEventListener('pointerup', finishGesture, { passive: true });
     portraitAccordion.addEventListener('pointercancel', finishGesture, { passive: true });
     portraitAccordion.addEventListener('scroll', () => {
-      if (!carousel.matches || scrollFrame) return;
+      if (!carousel.matches || syncingLayout || scrollFrame) return;
       scrollFrame = requestAnimationFrame(() => {
         scrollFrame = 0;
+        // 模式切换后旧滚动回调不能再用电脑布局计算手机照片位置。
+        if (!carousel.matches || syncingLayout) return;
         const box = portraitAccordion.getBoundingClientRect();
         const center = box.left + box.width / 2;
         const closest = panels.reduce((best, panel, index) => {
@@ -719,7 +721,7 @@
     }, { passive: true });
     panels.forEach((panel, index) => {
       panel.addEventListener('pointerenter', event => {
-        if (!carousel.matches && event.pointerType === 'mouse') activate(index);
+        if (!carousel.matches && !syncingLayout && performance.now() >= hoverFreezeUntil && event.pointerType === 'mouse') activate(index);
       });
       panel.addEventListener('pointerdown', () => { panel.dataset.wasActive = String(activeIndex === index); });
       panel.addEventListener('focus', () => { if (!gesture) scrollToPanel(index, false); });
@@ -742,7 +744,13 @@
     const alignPortrait = () => {
       cancelAnimationFrame(resizeFrame);
       const selected = activeIndex;
-      resizeFrame = requestAnimationFrame(() => scrollToPanel(selected, false));
+      syncingLayout = true;
+      // 布局过渡时照片会经过静止的鼠标，不能误当成主动悬停切图。
+      hoverFreezeUntil = performance.now() + 350;
+      resizeFrame = requestAnimationFrame(() => {
+        scrollToPanel(selected, false);
+        requestAnimationFrame(() => { syncingLayout = false; });
+      });
     };
     carousel.addEventListener('change', alignPortrait);
     window.addEventListener('resize', alignPortrait);
