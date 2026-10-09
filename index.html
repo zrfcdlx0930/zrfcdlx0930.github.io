@@ -623,7 +623,7 @@
 
   const links = document.querySelectorAll('[data-nav]');
   window.addEventListener('scroll', () => {
-    const y = window.scrollY + document.getElementById('nav').getBoundingClientRect().bottom + 16;
+    const y = window.scrollY + Math.max(120, document.getElementById('nav').getBoundingClientRect().bottom + 16);
     let cur = '';
     document.querySelectorAll('section[id]').forEach(s => { if (s.offsetTop <= y) cur = s.id; });
     links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
