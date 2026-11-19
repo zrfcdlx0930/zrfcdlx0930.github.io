@@ -20,20 +20,18 @@
   canvas.height = Math.round(height * density);
   ctx.scale(canvas.width / width, canvas.height / height);
 
-  // 起点散在视野两侧，每支光标负责一个现有的首页元素。
+  // 分批搭建导航、标题、简介和入口。开始时间包含飞行，搭建从光标落位时起算。
   const scene = [
-    { selector: '#nav', from: [.18, .31], delay: 0, side: 1 },
-    { selector: '.hero h1', from: [.13, .54], delay: 105, side: 1, text: true, reveal: true },
-    { selector: '.hero .sub', from: [.84, .21], delay: 155, side: -1, text: true, reveal: true },
-    { selector: '.hero .desc', from: [.89, .46], delay: 215, side: -1, text: true, reveal: true },
-    { selector: '.hero-cta .btn-primary', from: [.23, .77], delay: 285, side: 1 },
-    { selector: '.hero-cta .btn-ghost', from: [.80, .77], delay: 340, side: -1 },
-    { selector: '.hero-tags', from: [.58, .91], delay: 400, side: -1, text: true }
+    { selector: '#nav', from: [.18, .31], start: 0, build: 600, side: 1, kind: 'nav' },
+    { selector: '.hero h1', from: [.13, .52], start: 850, build: 750, side: 1, kind: 'title' },
+    { selector: '.hero .sub', from: [.84, .21], start: 1730, build: 600, side: 1, kind: 'text' },
+    { selector: '.hero .desc', from: [.89, .46], start: 2290, build: 530, side: 1, kind: 'text' },
+    { selector: '.hero-cta .btn-primary', from: [.23, .77], start: 2840, build: 500, side: 1, kind: 'button' },
+    { selector: '.hero-cta .btn-ghost', from: [.80, .77], start: 3400, build: 480, side: -1, kind: 'button' },
+    { selector: '.hero-tags', from: [.58, .91], start: 3870, build: 550, side: 1, kind: 'text' }
   ];
-  const travelTime = 530;
-  const traceTime = 360;
-  const exitTime = 270;
-  const duration = 1800;
+  const travelTime = 660;
+  const exitTime = 470;
   const clamp = value => Math.max(0, Math.min(1, value));
   const ease = value => 1 - (1 - value) ** 3;
 
@@ -42,8 +40,9 @@
     const rect = element.getBoundingClientRect();
     if (rect.bottom > height - 10 || rect.top < 8) return [];
 
+    const writesText = task.kind === 'title' || task.kind === 'text';
     let contentWidth = rect.width;
-    if (task.text) {
+    if (writesText) {
       const folded = element.querySelectorAll('.fold-text-piece');
       if (folded.length) {
         contentWidth = Array.from(folded).reduce((total, char) => total + char.offsetWidth, 0);
@@ -53,7 +52,7 @@
         contentWidth = text.getBoundingClientRect().width;
       }
     }
-    const gap = task.selector === '.hero h1' ? 14 : 8;
+    const gap = task.kind === 'title' ? 14 : 8;
     const margin = (rect.width - contentWidth) / 2;
     const boxWidth = contentWidth + gap * 2;
     const boxHeight = rect.height + gap * 2;
@@ -61,14 +60,17 @@
     const boxTop = rect.top - gap;
     const cornerX = task.side === 1 ? boxLeft : boxLeft + boxWidth;
     const cornerY = task.side === 1 ? boxTop : boxTop + boxHeight;
-    const edge = Math.min(18, boxWidth * .19, boxHeight * .33);
+    const edge = Math.min(24, boxWidth * .19, boxHeight * .38);
 
     return [{
-      ...task, element, rect, margin, cornerX, cornerY, boxWidth, boxHeight, edge,
+      ...task, element, rect, margin, cornerX, cornerY, boxWidth, boxHeight, edge, writesText,
+      arrives: task.start + travelTime,
       startX: task.from[0] * width,
       startY: task.from[1] * height
     }];
   });
+  const lastBuild = Math.max(0, ...workers.map(worker => worker.arrives + worker.build));
+  const duration = lastBuild + exitTime;
 
   // 细长箭尖、银色折面和一笔暖金边缘呼应玻璃导航与摄影取景框。
   const tip = new Path2D('M0 0 L7 24 L11 16 L16 23 L20 20 L15 13 L23 11 Z');
@@ -91,32 +93,66 @@
   }
 
   for (const worker of workers) {
-    if (!worker.reveal) continue;
-    const { element, rect, margin, side, delay } = worker;
-    const edge = Math.max(0, margin - 18);
-    const closed = side === 1
-      ? `inset(-20px ${rect.width - edge}px -20px -20px)`
-      : `inset(-20px -20px -20px ${rect.width - edge}px)`;
+    const { element, rect, margin, arrives, kind, build, writesText } = worker;
+    const easing = 'cubic-bezier(.16,1,.3,1)';
+    if (!writesText) {
+      // 可点击元素只改透明度，动画途中仍能接收键盘和鼠标输入。
+      revealAnimations.push(element.animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { delay: arrives + 100, duration: 350, easing, fill: 'backwards' }
+      ));
+      if (kind === 'nav') {
+        element.querySelectorAll('.brand, [data-nav]').forEach((item, index) => {
+          revealAnimations.push(item.animate(
+            [{ opacity: 0 }, { opacity: 1 }],
+            { delay: arrives + 155 + index * 57, duration: 160, easing, fill: 'backwards' }
+          ));
+        });
+      }
+      continue;
+    }
+
+    const trim = Math.max(0, margin - 12);
     revealAnimations.push(element.animate(
-      [{ clipPath: closed }, { clipPath: 'inset(-20px)' }],
-      { delay: delay + travelTime - 85, duration: 390, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' }
+      [
+        { clipPath: `inset(-20px ${rect.width - trim}px -20px -20px)` },
+        { clipPath: `inset(-20px ${trim}px -20px -20px)` }
+      ],
+      { delay: arrives, duration: build, easing: kind === 'title' ? 'steps(3, end)' : 'linear', fill: 'backwards' }
     ));
+  }
+
+  // 首屏露出的相册随最后一批光标接上，保持下方内容的原有滚动入场。
+  const tags = workers.find(worker => worker.selector === '.hero-tags');
+  if (tags) {
+    const portraitTitle = document.querySelector('.hero .strip-title');
+    if (portraitTitle.getBoundingClientRect().top < height) {
+      for (const [index, element] of [portraitTitle, document.querySelector('#portraitAccordion')].entries()) {
+        revealAnimations.push(element.animate(
+          [{ opacity: 0 }, { opacity: 1 }],
+          { delay: tags.arrives + index * 140, duration: 390, easing: 'ease-out', fill: 'backwards' }
+        ));
+      }
+    }
   }
 
   function draw(elapsed) {
     ctx.clearRect(0, 0, width, height);
+    const release = clamp((elapsed - lastBuild) / exitTime);
+
     for (const worker of workers) {
-      const time = elapsed - worker.delay;
+      const time = elapsed - worker.start;
       if (time < 0) continue;
 
-      const { side, cornerX, cornerY, boxWidth, boxHeight, edge, startX, startY } = worker;
+      const { side, cornerX, cornerY, boxWidth, boxHeight, edge, startX, startY, build, writesText, arrives } = worker;
       const travel = clamp(time / travelTime);
       const arrival = ease(travel);
-      const trace = clamp((time - travelTime) / traceTime);
-      const out = clamp((time - travelTime - traceTime - 180) / exitTime);
-      const alpha = Math.min(time / 120, 1) * (1 - out);
+      const trace = clamp((elapsed - arrives) / build);
+      const settled = clamp((elapsed - arrives - build) / 320);
+      const alpha = Math.min(time / 150, 1) * (1 - .58 * settled) * (1 - release);
       if (alpha <= 0) continue;
 
+      const distance = (writesText ? boxWidth : edge) * trace;
       if (trace > 0) {
         ctx.globalAlpha = alpha * .8;
         ctx.strokeStyle = '#dfc494';
@@ -128,15 +164,24 @@
         ctx.lineTo(cornerX + side * edge * trace, cornerY);
         const farX = cornerX + side * boxWidth;
         const farY = cornerY + side * boxHeight;
-        const farEdge = edge * clamp(trace * 1.6 - .55);
+        const farEdge = edge * clamp(trace * 1.8 - .55);
         ctx.moveTo(farX, farY - side * farEdge);
         ctx.lineTo(farX, farY);
         ctx.lineTo(farX - side * farEdge, farY);
         ctx.stroke();
+
+        // 文字上方的细导线随光标向前扫描，与实际露出的内容对齐。
+        if (writesText && settled < 1) {
+          ctx.globalAlpha *= .45 * (1 - settled);
+          ctx.beginPath();
+          ctx.moveTo(cornerX, cornerY);
+          ctx.lineTo(cornerX + distance, cornerY);
+          ctx.stroke();
+        }
       }
 
-      const x = startX + (cornerX - startX) * arrival + side * edge * trace - side * 24 * out;
-      const y = startY + (cornerY - startY) * arrival + Math.sin(travel * Math.PI) * side * 35 + 18 * out;
+      const x = startX + (cornerX - startX) * arrival + side * distance + side * 26 * release;
+      const y = startY + (cornerY - startY) * arrival + Math.sin(travel * Math.PI) * side * 35 - 22 * release;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.translate(x, y);
