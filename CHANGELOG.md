@@ -14,6 +14,14 @@
 - 本日志记录功能、文案、媒体、样式、修复、适配、性能、发布配置和项目文档的更新；普通讨论与未实施建议不写成已完成更新。
 - 原始交接资料未随日志公开；不记录密码、令牌、私人背景、本机绝对路径或私人网络地址。历史中的已撤下素材和弃用方案仅供追溯，不应据此重新加入网站。
 
+## 2026-11-19 — 加入七光标首屏开场
+
+- 参考 Swarm Cursors 的多光标协作搭建方式，为桌面首页制作约 1.8 秒的开场。七支钛银切面箭头依次聚向导航、标题、简介和入口，描出暖金色取景框。
+- 使用原生 Canvas 和页面现有元素。开场结束后清理绘图层，首次点击、键盘操作或离开首屏时也会立即收场。触屏、小屏、减少动态效果及带地址片段的直达链接跳过开场。
+- 影响文件为 `index.html`、`swarm-intro.js` 和 `CHANGELOG.md`。
+- 使用 Windows PowerShell 和 Node.js 检查脚本，在 Chromium 中检查开场画面、自动退场、点击跳转、山野画廊开关、390px 手机布局及减少动态效果。此提交用于原 GitHub Pages 地址发布。
+- 灵感来源为 [Swarm Page Builder](https://github.com/cxyax/swarm-cursors-skills)、[Swarm Rebuild](https://github.com/DhvanilPatel/swarm-cursors) 和 [Joel Califa 的 Swarm](https://github.com/califa/swarm-site)。光标和开场逻辑为本项目编写。
+
 ## 2026-10-11 — 建立持续更新日志与维护规则
 
 - **新增**：建立本日志，补录 WorkBuddy 初始制作与 v1–v22 迭代、四条本地迁移提交、GitHub 的全部 32 条历史提交，以及源码导出交付记录。
