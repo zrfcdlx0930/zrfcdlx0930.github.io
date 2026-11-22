@@ -54,7 +54,8 @@
 
   // 排版时按实际字块逐个落位，保留页面自身文字与无障碍名称。
   function schedule(element, kind, start, duration, reveal, owner) {
-    const flight = kind === 'place' ? 170 : 235;
+    const flight = kind === 'sweep' ? 100 : kind === 'place' ? 170 : 235;
+    const exit = kind === 'sweep' ? 130 : 190;
     const arrives = start + flight;
     const glyphs = kind === 'type' ? [...element.querySelectorAll('.fold-text-piece')] : [];
     const range = kind === 'type' && !glyphs.length ? document.createRange() : null;
@@ -96,7 +97,7 @@
           delay, duration, 'linear');
       }
     }
-    jobs.push({ element, kind, start, flight, duration, owner, animations, glyphs, range, side });
+    jobs.push({ element, kind, start, flight, duration, exit, owner, animations, glyphs, range, side });
   }
 
   function cursor(x, y, side, alpha) {
@@ -121,14 +122,32 @@
   }
 
   function draw(job, elapsed) {
-    const { element, kind, glyphs, range, flight, duration, side } = job;
+    const { element, kind, glyphs, range, flight, duration, exit, side } = job;
     const box = element.getBoundingClientRect();
     if (box.bottom < 0 || box.top > height) return;
 
     const approach = ease(clamp(elapsed / flight));
     const phase = clamp((elapsed - flight) / duration);
-    const leave = clamp((elapsed - flight - duration) / 190);
+    const leave = clamp((elapsed - flight - duration) / exit);
     const alpha = clamp(elapsed / 85) * (1 - leave);
+
+    if (kind === 'sweep') {
+      // 回看只扫过上沿的一小段，内容保持原位。
+      const y = Math.max(76, box.top - 6);
+      const left = box.left - 6;
+      const x = mix(left, Math.min(box.right, left + 112), ease(phase));
+      ctx.globalAlpha = alpha * .36;
+      ctx.strokeStyle = gold;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.max(left, x - 32), y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      cursor(x - (1 - approach) * 28 + leave * 14, y + (1 - approach) * 12, 1, alpha * .66);
+      return;
+    }
+
     let x = box.left - 7;
     let y = box.top - 7;
     ctx.globalAlpha = alpha * .85;
@@ -189,7 +208,11 @@
     for (let index = jobs.length - 1; index >= 0; index--) {
       const job = jobs[index];
       const elapsed = now - job.start;
-      if (elapsed >= job.flight + job.duration + 190) {
+      if (elapsed >= job.flight + job.duration + job.exit) {
+        if (mode === 'intro' && job.owner) {
+          seen.add(job.owner);
+          played.add(job.owner);
+        }
         clearJob(job);
         jobs.splice(index, 1);
       } else if (elapsed >= 0) {
@@ -224,8 +247,7 @@
     plan.forEach(([selector, kind, offset, duration]) => {
       const node = document.querySelector(selector);
       if (node.getBoundingClientRect().top < height - 24) {
-        schedule(node, kind, start + offset, duration, true);
-        if (node.matches('.strip-title')) played.add(node);
+        schedule(node, kind, start + offset, duration, true, node.matches('.strip-title') ? node : null);
       }
     });
     document.querySelectorAll('#nav [data-nav]').forEach((node, index) => {
@@ -233,8 +255,7 @@
     });
     const portrait = document.getElementById('portraitAccordion');
     if (portrait.getBoundingClientRect().top < height - 24) {
-      schedulePortrait(portrait, start + 4080, true, null);
-      played.add(portrait);
+      schedulePortrait(portrait, start + 4080, true, portrait);
     }
     frame = requestAnimationFrame(tick);
   }
@@ -250,20 +271,32 @@
     if (!preference.matches || document.hidden || scrollY <= 24 || mode === 'intro' ||
         document.querySelector('.gallery-dialog.is-open, .lightbox.open')) return;
 
-    const pending = [...visible].filter(element => !played.has(element)).slice(0, 3 - active.size);
-    if (!pending.length) return;
+    const entering = [...visible].filter(element => !played.has(element));
+    const revisiting = entering.filter(element => seen.has(element));
+    const pending = entering.filter(element => !seen.has(element)).slice(0, 3 - active.size);
+    // 同一批回到视野的内容只搭配一次轻扫，避免光标排队追赶滚动。
+    for (const element of revisiting) {
+      played.add(element);
+      if (element.matches('.fold-text')) element.classList.add('swarm-typeset');
+      element.querySelectorAll('.fold-text').forEach(title => title.classList.add('swarm-typeset'));
+    }
+    const replayTarget = !pending.length && !active.size ? revisiting[0] : null;
+    if (!pending.length && !replayTarget) return;
     if (!mode) mount('scroll');
     const now = performance.now();
+    if (replayTarget) {
+      active.add(replayTarget);
+      schedule(replayTarget, 'sweep', now, 210, false, replayTarget);
+    }
     pending.forEach((element, index) => {
-      const reveal = !seen.has(element);
       const start = now + index * 110;
-      const add = (node, kind, offset, duration) => schedule(node, kind, start + offset, duration, reveal, element);
+      const add = (node, kind, offset, duration) => schedule(node, kind, start + offset, duration, true, element);
       seen.add(element);
       played.add(element);
       active.add(element);
 
       if (element.id === 'portraitAccordion') {
-        schedulePortrait(element, start, reveal, element);
+        schedulePortrait(element, start, true, element);
       } else if (element.matches('.tl-item')) {
         add(element, 'rail', 0, 620);
         add(element.querySelector('h3'), 'type', 150, 570);
