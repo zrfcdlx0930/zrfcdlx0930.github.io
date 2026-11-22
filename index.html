@@ -115,6 +115,8 @@
   .fold-text.fold-in .fold-text-piece::after { animation: fold-crease-out .65s ease-out both; animation-delay: var(--fold-delay, 0ms); }
   @keyframes fold-text-in { to { transform: rotateX(0); opacity: 1; } }
   @keyframes fold-crease-out { to { opacity: 0; } }
+  .fold-text.swarm-typeset .fold-text-piece { animation: none; transform: none; opacity: 1; }
+  .fold-text.swarm-typeset .fold-text-piece::after { display: none; }
 
   /* HERO */
   .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-top: 120px; }
@@ -838,6 +840,6 @@
 </script>
 <script src="media-gallery.js?v=20261009-touch1" defer></script>
 <script src="interaction-effects.js?v=20261008-align1" defer></script>
-<script src="swarm-intro.js?v=20261119-3" defer></script>
+<script src="swarm-intro.js?v=20261122-4" defer></script>
 </body>
 </html>
