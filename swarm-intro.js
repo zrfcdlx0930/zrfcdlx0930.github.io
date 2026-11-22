@@ -1,8 +1,13 @@
 (() => {
   'use strict';
 
-  // 参考多光标协作搭建的表现方式，用原生画布绘制首页开场。
+  // 与首屏共用钛银光标，区块进入视野后继续接力。
   const preference = matchMedia('(min-width: 761px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  const clamp = value => Math.max(0, Math.min(1, value));
+  const ease = value => 1 - (1 - value) ** 3;
+  const tip = new Path2D('M0 0 L7 24 L11 16 L16 23 L20 20 L15 13 L23 11 Z');
+  const face = new Path2D('M0 0 L11 16 L23 11 Z');
+  setupScrollScenes();
   if (!preference.matches || document.hidden || location.hash || window.scrollY > 24) return;
 
   const canvas = document.createElement('canvas');
@@ -32,8 +37,6 @@
   ];
   const travelTime = 660;
   const exitTime = 470;
-  const clamp = value => Math.max(0, Math.min(1, value));
-  const ease = value => 1 - (1 - value) ** 3;
 
   const workers = scene.flatMap(task => {
     const element = document.querySelector(task.selector);
@@ -72,13 +75,7 @@
   const lastBuild = Math.max(0, ...workers.map(worker => worker.arrives + worker.build));
   const duration = lastBuild + exitTime;
 
-  // 细长箭尖、银色折面和一笔暖金边缘呼应玻璃导航与摄影取景框。
-  const tip = new Path2D('M0 0 L7 24 L11 16 L16 23 L20 20 L15 13 L23 11 Z');
-  const face = new Path2D('M0 0 L11 16 L23 11 Z');
-  const silver = ctx.createLinearGradient(0, 0, 21, 23);
-  silver.addColorStop(0, '#f5fcff');
-  silver.addColorStop(.48, '#c5d2db');
-  silver.addColorStop(1, '#64717d');
+  const silver = cursorGradient(ctx);
 
   let frame;
   const revealAnimations = [];
@@ -182,28 +179,7 @@
 
       const x = startX + (cornerX - startX) * arrival + side * distance + side * 26 * release;
       const y = startY + (cornerY - startY) * arrival + Math.sin(travel * Math.PI) * side * 35 - 22 * release;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(x, y);
-      ctx.rotate(side === 1 ? -.19 : .21);
-      ctx.shadowColor = '#000a';
-      ctx.shadowBlur = 9;
-      ctx.shadowOffsetY = 3;
-      ctx.fillStyle = silver;
-      ctx.fill(tip);
-      ctx.shadowColor = 'transparent';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.15;
-      ctx.lineJoin = 'round';
-      ctx.stroke(tip);
-      ctx.fillStyle = 'rgba(36, 44, 54, .72)';
-      ctx.fill(face);
-      ctx.strokeStyle = '#e2c28a';
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(11, 16);
-      ctx.stroke();
-      ctx.restore();
+      drawCursor(ctx, silver, x, y, side, alpha);
       ctx.globalAlpha = 1;
     }
   }
@@ -228,4 +204,179 @@
   }, { signal, passive: true });
   document.addEventListener('visibilitychange', finish, { signal });
   preference.addEventListener('change', finish, { signal });
+
+  function cursorGradient(context) {
+    const gradient = context.createLinearGradient(0, 0, 21, 23);
+    gradient.addColorStop(0, '#f5fcff');
+    gradient.addColorStop(.48, '#c5d2db');
+    gradient.addColorStop(1, '#64717d');
+    return gradient;
+  }
+
+  function drawCursor(context, gradient, x, y, side, alpha) {
+    context.save();
+    context.globalAlpha = alpha;
+    context.translate(x, y);
+    context.rotate(side === 1 ? -.19 : .21);
+    context.shadowColor = '#000a';
+    context.shadowBlur = 9;
+    context.shadowOffsetY = 3;
+    context.fillStyle = gradient;
+    context.fill(tip);
+    context.shadowColor = 'transparent';
+    context.strokeStyle = '#fff';
+    context.lineWidth = 1.15;
+    context.lineJoin = 'round';
+    context.stroke(tip);
+    context.fillStyle = 'rgba(36, 44, 54, .72)';
+    context.fill(face);
+    context.strokeStyle = '#e2c28a';
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(11, 16);
+    context.stroke();
+    context.restore();
+  }
+
+  function setupScrollScenes() {
+    const targets = document.querySelectorAll([
+      '.hero .strip-title', '#portraitAccordion', '.sec-title', '.sec-sub',
+      '.about-text', '.fact', '.tl-item', '.honours h3', '.honour',
+      '.skill-row', '.folder-row', '.contact .big', '.contact .sub',
+      '.contact .btn-primary', '#mailCopy'
+    ].join(','));
+    const visible = new Set();
+    const played = new Set();
+    const firstAppearance = new WeakSet();
+    const active = new Map();
+    const flight = 390;
+    const traceTime = 510;
+    const fadeTime = 270;
+    let layer, paint, gradient, frame = 0, width, height;
+
+    function stop() {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      active.forEach(scene => scene.reveal?.cancel());
+      active.clear();
+      layer?.remove();
+      layer = null;
+      paint = null;
+      gradient = null;
+    }
+
+    function startVisible() {
+      if (!preference.matches || window.scrollY <= 24 || document.hidden ||
+          document.querySelector('#swarmIntro, .gallery-dialog.is-open, .lightbox.open')) return;
+      const pending = [...visible].filter(element => !played.has(element)).slice(0, 5 - active.size);
+      if (!pending.length) return;
+
+      // 同屏共用一层画布，全部完成便释放，浏览时不维持常驻绘制。
+      if (!layer) {
+        layer = document.createElement('canvas');
+        layer.id = 'swarmScroll';
+        layer.className = 'interaction-fx';
+        layer.setAttribute('aria-hidden', 'true');
+        document.body.append(layer);
+        ({ width, height } = layer.getBoundingClientRect());
+        const ratio = Math.min(devicePixelRatio || 1, 1.5);
+        layer.width = Math.round(width * ratio);
+        layer.height = Math.round(height * ratio);
+        paint = layer.getContext('2d');
+        paint.scale(layer.width / width, layer.height / height);
+        gradient = cursorGradient(paint);
+      }
+
+      const now = performance.now();
+      pending.forEach((element, index) => {
+        const stagger = index * 105;
+        const heading = element.matches('h2, h3, .contact .big, .sec-sub');
+        const range = heading ? document.createRange() : null;
+        range?.selectNodeContents(element);
+        let reveal;
+        if (!firstAppearance.has(element)) {
+          firstAppearance.add(element);
+          // 只在首次入场衔接原有渐显，返回已经读过的区块时文字保持清晰。
+          reveal = element.animate([{ opacity: .32 }, { opacity: 1 }], {
+            delay: stagger + flight - 90,
+            duration: 380,
+            easing: 'cubic-bezier(.16,1,.3,1)',
+            fill: 'backwards'
+          });
+        }
+        active.set(element, { starts: now + stagger, range, reveal });
+        played.add(element);
+      });
+      if (!frame) frame = requestAnimationFrame(paintScenes);
+    }
+
+    function paintScenes(now) {
+      frame = 0;
+      paint.clearRect(0, 0, width, height);
+      for (const [element, scene] of active) {
+        const elapsed = now - scene.starts;
+        if (elapsed < 0) continue;
+        if (elapsed >= flight + traceTime + fadeTime) {
+          active.delete(element);
+          continue;
+        }
+
+        // 每帧用当前元素位置绘制，滚动或原有入场位移不会把光标留在原处。
+        const box = scene.range ? scene.range.getBoundingClientRect() : element.getBoundingClientRect();
+        const left = box.left - 9;
+        const top = box.top - 8;
+        const right = box.right + 9;
+        const bottom = box.bottom + 8;
+        const arriving = ease(clamp(elapsed / flight));
+        const trace = clamp((elapsed - flight) / traceTime);
+        const fade = clamp((elapsed - flight - traceTime) / fadeTime);
+        const alpha = clamp(elapsed / 150) * (1 - fade);
+        const edge = Math.min(28, (right - left) * .22, (bottom - top) * .35) * trace;
+        const sweep = scene.range ? (right - left) * trace : edge;
+
+        paint.globalAlpha = alpha * .72;
+        paint.strokeStyle = '#dfc494';
+        paint.lineWidth = 1.2;
+        paint.beginPath();
+        paint.moveTo(left, top + edge);
+        paint.lineTo(left, top);
+        paint.lineTo(left + sweep, top);
+        paint.moveTo(right - edge, bottom);
+        paint.lineTo(right, bottom);
+        paint.lineTo(right, bottom - edge);
+        paint.stroke();
+
+        const drift = (1 - arriving) * 105;
+        const lift = (1 - arriving) * 42;
+        drawCursor(paint, gradient, left - drift + sweep + 20 * fade, top + lift - 14 * fade, 1, alpha);
+        drawCursor(paint, gradient, right + drift - edge - 20 * fade, bottom - lift + 14 * fade, -1, alpha * .86);
+      }
+      startVisible();
+      if (active.size && !frame) frame = requestAnimationFrame(paintScenes);
+      if (!active.size) stop();
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const element = entry.target;
+        if (entry.isIntersecting) {
+          if (entry.intersectionRatio >= .16) visible.add(element);
+        } else {
+          visible.delete(element);
+          played.delete(element);
+          active.get(element)?.reveal?.cancel();
+          active.delete(element);
+        }
+      }
+      startVisible();
+    }, { threshold: [0, .16], rootMargin: '-70px 0px 0px' });
+
+    targets.forEach(element => observer.observe(element));
+    window.addEventListener('scroll', startVisible, { passive: true });
+    for (const event of ['pointerdown', 'keydown', 'focusin', 'resize', 'pagehide', 'site:overlay-change']) {
+      window.addEventListener(event, stop);
+    }
+    document.addEventListener('visibilitychange', stop);
+    preference.addEventListener('change', stop);
+  }
 })();
