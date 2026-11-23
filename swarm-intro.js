@@ -28,7 +28,7 @@
     canvas.id = mode === 'intro' ? 'swarmIntro' : 'swarmScroll';
     document.body.append(canvas);
     ({ width, height } = canvas.getBoundingClientRect());
-    const density = Math.min(devicePixelRatio || 1, 1.5);
+    const density = Math.min(devicePixelRatio || 1, mode === 'intro' ? 1.5 : 1);
     canvas.width = Math.round(width * density);
     canvas.height = Math.round(height * density);
     ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
@@ -54,8 +54,8 @@
 
   // 排版时按实际字块逐个落位，保留页面自身文字与无障碍名称。
   function schedule(element, kind, start, duration, reveal, owner) {
-    const flight = kind === 'sweep' ? 100 : kind === 'place' ? 170 : 235;
-    const exit = kind === 'sweep' ? 130 : 190;
+    const flight = kind === 'sweep' ? 100 : mode === 'scroll' ? 120 : kind === 'place' ? 170 : 235;
+    const exit = kind === 'sweep' || mode === 'scroll' ? 130 : 190;
     const arrives = start + flight;
     const glyphs = kind === 'type' ? [...element.querySelectorAll('.fold-text-piece')] : [];
     const range = kind === 'type' && !glyphs.length ? document.createRange() : null;
@@ -71,7 +71,7 @@
     if (reveal) {
       // 已纳入搭建的内容由本次时间轴控制，避免原来的整块渐显叠加。
       const container = element.closest('.reveal, .blur-reveal');
-      container?.classList.add('in');
+      container?.classList.add('in', 'swarm-ready');
       if (writing) {
         element.classList.add('swarm-typeset');
         const interval = duration / glyphs.length;
@@ -273,7 +273,7 @@
   }
 
   function showImmediately(element) {
-    element.closest('.reveal, .blur-reveal')?.classList.add('in');
+    element.closest('.reveal, .blur-reveal')?.classList.add('in', 'swarm-ready');
     keepTextVisible(element);
     seen.add(element);
     played.add(element);
@@ -286,7 +286,10 @@
 
     const entering = [...visible].filter(element => !played.has(element));
     const revisiting = entering.filter(element => seen.has(element));
-    const pending = entering.filter(element => !seen.has(element)).slice(0, 3 - active.size);
+    const fresh = entering.filter(element => !seen.has(element));
+    const pending = fresh.slice(0, 3 - active.size);
+    // 超出同屏预算的内容立即可读，避免滑到新位置后还在等上一轮搭建。
+    fresh.slice(pending.length).forEach(showImmediately);
     // 同一批回到视野的内容只搭配一次轻扫，避免光标排队追赶滚动。
     for (const element of revisiting) {
       played.add(element);
@@ -301,8 +304,8 @@
       schedule(replayTarget, 'sweep', now, 210, false, replayTarget);
     }
     pending.forEach((element, index) => {
-      const start = now + index * 110;
-      const add = (node, kind, offset, duration) => schedule(node, kind, start + offset, duration, true, element);
+      const start = now + index * 45;
+      const add = (node, kind, offset, duration) => schedule(node, kind, start + offset * .55, duration * .6, true, element);
       seen.add(element);
       played.add(element);
       active.add(element);

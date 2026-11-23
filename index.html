@@ -94,6 +94,7 @@
 
   .reveal { opacity: 0; transform: translateY(36px) scale(.96); transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
   .reveal.in { opacity: 1; transform: none; }
+  .reveal.swarm-ready { transition-duration: 0s; }
   .blur-reveal { opacity: 0; filter: blur(12px); transition: opacity 1.1s ease, filter 1.1s ease; }
   .blur-reveal.in { opacity: 1; filter: blur(0); }
 
@@ -589,7 +590,8 @@
 
     const resize = () => {
       const mobile = window.matchMedia('(max-width: 760px)').matches;
-      const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.15 : 1.55);
+      // 波浪没有细小边缘，用低分辨率画布仍能保留平滑渐变。
+      const dpr = Math.min(window.devicePixelRatio || 1, mobile ? .8 : .85, 1120 / innerWidth, 740 / innerHeight);
       canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
       canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -598,27 +600,31 @@
     window.addEventListener('resize', resize, { passive: true });
     resize();
 
-    const startedAt = performance.now();
     let lastFrameAt = 0;
+    let lastScrollAt = -Infinity;
+    let waveTime = 0;
+    let backgroundFrame = 0;
+    window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, { passive: true });
     const render = now => {
-      // 背景限制为约 30 帧，保留流动感并降低手机和低功耗设备的压力
-      if (now - lastFrameAt < 32) {
-        if (!document.hidden) requestAnimationFrame(render);
-        return;
+      const elapsed = now - lastFrameAt;
+      // 滚动期间少画背景帧，优先给内容和光标留出绘制时间。
+      if (elapsed >= (now - lastScrollAt < 150 ? 66 : 32)) {
+        lastFrameAt = now;
+        waveTime += Math.min(elapsed, 70) * 0.001;
+        mouse[0] += (target[0] - mouse[0]) * 0.05;
+        mouse[1] += (target[1] - mouse[1]) * 0.05;
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform1f(timeLocation, waveTime);
+        gl.uniform2f(mouseLocation, mouse[0], mouse[1]);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
-      lastFrameAt = now;
-      mouse[0] += (target[0] - mouse[0]) * 0.05;
-      mouse[1] += (target[1] - mouse[1]) * 0.05;
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(timeLocation, (now - startedAt) * 0.001);
-      gl.uniform2f(mouseLocation, mouse[0], mouse[1]);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      if (!document.hidden) requestAnimationFrame(render);
+      backgroundFrame = requestAnimationFrame(render);
     };
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) requestAnimationFrame(render);
+      cancelAnimationFrame(backgroundFrame);
+      if (!document.hidden) backgroundFrame = requestAnimationFrame(render);
     });
-    requestAnimationFrame(render);
+    if (!document.hidden) backgroundFrame = requestAnimationFrame(render);
   })();
 
   const io = new IntersectionObserver((entries) => {
@@ -841,6 +847,6 @@
 </script>
 <script src="media-gallery.js?v=20261009-touch1" defer></script>
 <script src="interaction-effects.js?v=20261008-align1" defer></script>
-<script src="swarm-intro.js?v=20261122-6" defer></script>
+<script src="swarm-intro.js?v=20261123-7" defer></script>
 </body>
 </html>
