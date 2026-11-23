@@ -267,6 +267,19 @@
     });
   }
 
+  function keepTextVisible(element) {
+    if (element.matches('.fold-text')) element.classList.add('swarm-typeset');
+    element.querySelectorAll('.fold-text').forEach(title => title.classList.add('swarm-typeset'));
+  }
+
+  function showImmediately(element) {
+    element.closest('.reveal, .blur-reveal')?.classList.add('in');
+    keepTextVisible(element);
+    seen.add(element);
+    played.add(element);
+    element.classList.remove('swarm-pending');
+  }
+
   function startVisible() {
     if (!preference.matches || document.hidden || scrollY <= 24 || mode === 'intro' ||
         document.querySelector('.gallery-dialog.is-open, .lightbox.open')) return;
@@ -277,8 +290,7 @@
     // 同一批回到视野的内容只搭配一次轻扫，避免光标排队追赶滚动。
     for (const element of revisiting) {
       played.add(element);
-      if (element.matches('.fold-text')) element.classList.add('swarm-typeset');
-      element.querySelectorAll('.fold-text').forEach(title => title.classList.add('swarm-typeset'));
+      keepTextVisible(element);
     }
     const replayTarget = !pending.length && !active.size ? revisiting[0] : null;
     if (!pending.length && !replayTarget) return;
@@ -314,6 +326,8 @@
         const kind = element.matches('.sec-title, .sec-sub, h3, .contact .big, .contact .sub, .about-text') ? 'type' : 'place';
         add(element, kind, 0, 550);
       }
+      // 所有子动作都处于就绪状态后才解除等待，原有渐显不会提前露出内容。
+      element.classList.remove('swarm-pending');
     });
     if (!frame) frame = requestAnimationFrame(tick);
   }
@@ -323,6 +337,16 @@
     '.tl-item', '.honours h3', '.honour', '.skill-row', '.folder-row',
     '.contact .big', '.contact .sub', '.contact .btn-primary', '#mailCopy'
   ].join(','));
+  if (preference.matches) {
+    // 只暂藏尚未进屏的区块，刷新或直达时已看见的内容保持可见。
+    const waiting = [...targets].filter(element => {
+      const rect = element.getBoundingClientRect();
+      if (rect.top >= innerHeight || rect.bottom <= 0) return true;
+      seen.add(element);
+      return false;
+    });
+    waiting.forEach(element => element.classList.add('swarm-pending'));
+  }
   const observer = new IntersectionObserver(entries => {
     for (const entry of entries) {
       const element = entry.target;
@@ -346,9 +370,23 @@
     if (mode === 'intro' && scrollY > 24) stop();
     startVisible();
   }, { passive: true });
-  for (const event of ['pointerdown', 'keydown', 'focusin', 'resize', 'pagehide', 'site:overlay-change']) {
+  for (const event of ['pointerdown', 'focusin']) {
+    window.addEventListener(event, ({ target }) => {
+      const waiting = target.closest('.swarm-pending');
+      if (waiting) showImmediately(waiting);
+      stop();
+    });
+  }
+  for (const event of ['keydown', 'pagehide', 'site:overlay-change']) {
     window.addEventListener(event, stop);
   }
+  window.addEventListener('resize', () => {
+    stop();
+    requestAnimationFrame(startVisible);
+  });
   document.addEventListener('visibilitychange', stop);
-  preference.addEventListener('change', stop);
+  preference.addEventListener('change', () => {
+    stop();
+    document.querySelectorAll('.swarm-pending').forEach(showImmediately);
+  });
 })();
